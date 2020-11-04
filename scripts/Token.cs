@@ -1,88 +1,90 @@
-using Godot;
 using System;
-using System.Drawing;
+using Godot;
 
-public class Token : Sprite
+namespace DndAwesome.scripts
 {
-	private bool m_FollowingMouse = false;
-	private bool m_ShouldSnapToGrid = false;
-	
-	public override void _Ready()
+	public class Token : Sprite
 	{
-		Map map = GetNode<Map>("/root/Root/Grid");
-		Vector2 gridTileSize = map.m_TileSize; 
-		Scale = new Vector2(gridTileSize.x / GetRect().Size.x, gridTileSize.y / GetRect().Size.y);
-	}
+		private bool m_FollowingMouse = false;
+		private bool m_ShouldSnapToGrid = false;
 	
-	public override void _Input(InputEvent input)
-	{
-		InputEventMouseButton mouseButtonEvent = input as InputEventMouseButton;
-		if(mouseButtonEvent != null)
+		public override void _Ready()
 		{
-			if (mouseButtonEvent.ButtonIndex == 1 && mouseButtonEvent.Pressed == true)
+			Map map = GetNode<Map>("/root/Root/Grid");
+			Vector2 gridTileSize = map.m_TileSize; 
+			Scale = new Vector2(gridTileSize.x / GetRect().Size.x, gridTileSize.y / GetRect().Size.y);
+		}
+	
+		public override void _Input(InputEvent input)
+		{
+			InputEventMouseButton mouseButtonEvent = input as InputEventMouseButton;
+			if(mouseButtonEvent != null)
 			{
-				Vector2 worldPos = GetGlobalTransform().Xform(GetRect().Position);
-				if (mouseButtonEvent.Position.x > worldPos.x &&
-				    mouseButtonEvent.Position.y > worldPos.y &&
-				    mouseButtonEvent.Position.x < worldPos.x + GetRect().Size.x &&
-				    mouseButtonEvent.Position.y < worldPos.y + GetRect().Size.y)
+				if (mouseButtonEvent.ButtonIndex == 1 && mouseButtonEvent.Pressed == true)
 				{
-					m_FollowingMouse = !m_FollowingMouse;
-					if (!m_FollowingMouse)
+					Vector2 worldPos = GetGlobalTransform().Xform(GetRect().Position);
+					if (mouseButtonEvent.Position.x > worldPos.x &&
+					    mouseButtonEvent.Position.y > worldPos.y &&
+					    mouseButtonEvent.Position.x < worldPos.x + GetRect().Size.x &&
+					    mouseButtonEvent.Position.y < worldPos.y + GetRect().Size.y)
 					{
-						m_ShouldSnapToGrid = true;
+						m_FollowingMouse = !m_FollowingMouse;
+						if (!m_FollowingMouse)
+						{
+							m_ShouldSnapToGrid = true;
+						}
 					}
 				}
 			}
 		}
-	}
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(float delta)
-	{
-		if (m_FollowingMouse)
+		// Called every frame. 'delta' is the elapsed time since the previous frame.
+		public override void _Process(float delta)
 		{
-			Position = GetViewport().GetMousePosition();
-		}
-		else if (m_ShouldSnapToGrid)
-		{
-			Map map = GetNode<Map>("/root/Root/Grid");
-			Vector2 gridTileSize = map.m_TileSize;
-
-			//get the potential snap positions
-			float snapNegativeX =
-				(float) (Math.Round((Position.x - (gridTileSize.x / 2)) / gridTileSize.x) * gridTileSize.x) +
-				(gridTileSize.x / 2);
-			float snapNegativeY =
-				(float) (Math.Round((Position.y - (gridTileSize.y / 2)) / gridTileSize.y) * gridTileSize.y) +
-				+(gridTileSize.y / 2);
-			float snapPositiveX = (float) (Math.Round(Position.x / gridTileSize.x) * gridTileSize.x) +
-			                      (gridTileSize.x / 2);
-			float snapPositiveY = (float) (Math.Round(Position.y / gridTileSize.y) * gridTileSize.y) +
-			                      (gridTileSize.y / 2);
-
-			float newX, newY = 0;
-			if (Math.Abs(Position.x - snapNegativeX) < Math.Abs(Position.x - snapPositiveX))
+			if (m_FollowingMouse)
 			{
-				newX = snapNegativeX;
+				Position = GetViewport().GetMousePosition();
 			}
-			else
+			else if (m_ShouldSnapToGrid)
 			{
-				newX = snapPositiveX;
-			}
+				Map map = GetNode<Map>("/root/Root/Grid");
+				Vector2 gridTileSize = map.m_TileSize;
+
+				//get the potential snap positions
+				float snapNegativeX =
+					(float) (Math.Round((Position.x - (gridTileSize.x / 2)) / gridTileSize.x) * gridTileSize.x) +
+					(gridTileSize.x / 2);
+				float snapNegativeY =
+					(float) (Math.Round((Position.y - (gridTileSize.y / 2)) / gridTileSize.y) * gridTileSize.y) +
+					+(gridTileSize.y / 2);
+				float snapPositiveX = (float) (Math.Round(Position.x / gridTileSize.x) * gridTileSize.x) +
+				                      (gridTileSize.x / 2);
+				float snapPositiveY = (float) (Math.Round(Position.y / gridTileSize.y) * gridTileSize.y) +
+				                      (gridTileSize.y / 2);
+
+				float newX, newY = 0;
+				if (Math.Abs(Position.x - snapNegativeX) < Math.Abs(Position.x - snapPositiveX))
+				{
+					newX = snapNegativeX;
+				}
+				else
+				{
+					newX = snapPositiveX;
+				}
 			
-			if (Math.Abs(Position.y - snapNegativeY) < Math.Abs(Position.y - snapPositiveY))
-			{
-				newY = snapNegativeY;
-			}
-			else
-			{
-				newY = snapPositiveY;
-			}
+				if (Math.Abs(Position.y - snapNegativeY) < Math.Abs(Position.y - snapPositiveY))
+				{
+					newY = snapNegativeY;
+				}
+				else
+				{
+					newY = snapPositiveY;
+				}
 
-			Position = new Vector2(newX, newY);
+				Position = new Vector2(newX, newY);
 
-			m_ShouldSnapToGrid = false;
+				m_ShouldSnapToGrid = false;
+			}
 		}
 	}
 }

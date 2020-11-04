@@ -4,13 +4,51 @@
 [ext_resource path="res://images/icon.png" type="Texture" id=2]
 [ext_resource path="res://scripts/Token.cs" type="Script" id=3]
 [ext_resource path="res://scripts/Map.cs" type="Script" id=4]
-[ext_resource path="res://scripts/HUD.cs" type="Script" id=5]
-[ext_resource path="res://scripts/MainScene.cs" type="Script" id=6]
 [ext_resource path="res://scripts/DatabasePanel.cs" type="Script" id=7]
 [ext_resource path="res://scripts/PanelButton.cs" type="Script" id=8]
 
+[sub_resource type="CSharpScript" id=1]
+script/source = "using Godot;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Godot.Collections;
+using Array = Godot.Collections.Array;
+using Directory = System.IO.Directory;
+
+public class MainScene : Node2D
+{
+	
+}
+"
+
+[sub_resource type="CSharpScript" id=2]
+script/source = "using Godot;
+using System;
+
+public class HUD : Node2D
+{
+    // Declare member variables here. Examples:
+    // private int a = 2;
+    // private string b = \"text\";
+
+    // Called when the node enters the scene tree for the first time.
+    public override void _Ready()
+    {
+        
+    }
+
+//  // Called every frame. 'delta' is the elapsed time since the previous frame.
+//  public override void _Process(float delta)
+//  {
+//      
+//  }
+}
+"
+
 [node name="Root" type="Node2D"]
-script = ExtResource( 6 )
+script = SubResource( 1 )
 
 [node name="Camera2D" type="Camera2D" parent="."]
 anchor_mode = 0
@@ -32,7 +70,7 @@ texture = ExtResource( 2 )
 script = ExtResource( 3 )
 
 [node name="HUD" type="Node2D" parent="."]
-script = ExtResource( 5 )
+script = SubResource( 2 )
 
 [node name="Panel" type="Panel" parent="HUD"]
 margin_left = -600.0
