@@ -14,8 +14,8 @@ namespace DndAwesome.scripts
         private Vector2 m_AnimateStartPosition;
         private Vector2 m_AnimateTargetPosition;
         private const float c_AnimationTime = 0.2f;
-        private readonly Vector2 m_TargetOpenPosition = new Vector2(0.0f, 0.0f);
-        private readonly Vector2 m_TargetClosedPosition = new Vector2(-400.0f, 0.0f);
+        private readonly Vector2 m_TargetOpenPosition = new Vector2(0.0f, 24.0f);
+        private readonly Vector2 m_TargetClosedPosition = new Vector2(-400.0f, 24.0f);
         private float m_AnimateCurrentTime;
 
         //State
