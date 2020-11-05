@@ -30,7 +30,7 @@ namespace DndAwesome.scripts
             {
                 if (input is InputEventMouseMotion mouseMotionEvent)
                 {
-                    Position -= mouseMotionEvent.Relative;
+                    Position -= mouseMotionEvent.Relative * Zoom;
                 }
             }
 
