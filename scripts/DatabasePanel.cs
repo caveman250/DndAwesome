@@ -7,368 +7,448 @@ using Godot.Collections;
 
 namespace DndAwesome.scripts
 {
-	public class DatabasePanel : Panel
-	{
-		private List<object> backStack = new List<object>();
-		private Array _selectedArray;
-		private Dictionary _selectedObject;
+    public class DatabasePanel : Panel
+    {
+        //Animation
+        private bool m_IsAnimating;
+        private Vector2 m_AnimateStartPosition;
+        private Vector2 m_AnimateTargetPosition;
+        private const float c_AnimationTime = 0.2f;
+        private readonly Vector2 m_TargetOpenPosition = new Vector2(0.0f, 0.0f);
+        private readonly Vector2 m_TargetClosedPosition = new Vector2(-400.0f, 0.0f);
+        private float m_AnimateCurrentTime;
 
-		private string _searchString = "";
-		private bool _panelOpen = false;
-		private bool _isAnimating = false;
-		private Vector2 _animateStartPosition;
-		private Vector2 _targetPosition;
-		private const float AnimateTargetTime = 0.3f;
-		private readonly Vector2 TargetOpenPosition = new Vector2(0.0f, 0.0f);
-		private readonly Vector2 TargetClosedPosition = new Vector2(-600.0f, 0.0f);
-		private float _animateCurrentTime = 0.0f;
-	
-		private DynamicFont _font = (DynamicFont)GD.Load("res://fonts/jmHarkam.tres");
-		private DynamicFont _boldFont = (DynamicFont)GD.Load("res://fonts/jmHarkam_bold.tres");
+        //State
+        private bool m_PanelOpen;
+        private readonly List<object> m_BackStack = new List<object>();
 
-		private Godot.Collections.Dictionary<string, Array> m_Db = new Godot.Collections.Dictionary<string, Array>();
-		
-		public override void _Process(float delta)
-		{
-			if (!hasUpdated)
-			{
-				Node container = GetNode("ScrollContainer/PanelContainer");
-				if (container != null)
-				{
-					RefreshButtons();
-					hasUpdated = true;
-				}
-			}
+        //List View
+        private Node m_ListContainer;
+        private Array m_SelectedArray;
+        private Dictionary m_SelectedObject;
+        private readonly DynamicFont m_Font = (DynamicFont)GD.Load("res://fonts/jmHarkam.tres");
+        private readonly DynamicFont m_BoldFont = (DynamicFont)GD.Load("res://fonts/jmHarkam_bold.tres");
 
-			if (_isAnimating)
-			{
-				_animateCurrentTime += delta;
-				float lerp = _animateCurrentTime / AnimateTargetTime;
-				Vector2 newPos = new Vector2(Mathf.Lerp(_animateStartPosition.x, _targetPosition.x, lerp),
-					Mathf.Lerp(_animateStartPosition.y, _targetPosition.y, lerp));
+        //Search Bar
+        private LineEdit m_SearchField;
+        private string m_SearchString = "";
 
-				SetPosition(newPos);
+        private readonly Godot.Collections.Dictionary<string, Array> m_Databases = new Godot.Collections.Dictionary<string, Array>();
 
-				if (_animateCurrentTime >= AnimateTargetTime)
-				{
-					_isAnimating = false;
-					SetPosition(_targetPosition);
-					_panelOpen = !_panelOpen;
-				}
-			}
-		}
-		public override void _Ready()
-		{
-			foreach (var file in System.IO.Directory.EnumerateFiles("data/database"))
-			{
-				LoadDataBase(file);
-			}
-		}
-		
-		private void LoadDataBase(string path)
-		{
-			string rawJson = System.IO.File.ReadAllText(path);
+        //Public Methods
+        public bool IsPanelOpen()
+        {
+            return m_PanelOpen;
+        }
+
+        public void FocusSearchBox()
+        {
+            m_SearchField.GrabFocus();
+        }
+
+        public void TogglePanel()
+        {
+            m_AnimateStartPosition = GetRect().Position;
+            m_AnimateTargetPosition = m_PanelOpen ? m_TargetClosedPosition : m_TargetOpenPosition;
+            m_IsAnimating = true;
+            m_AnimateCurrentTime = 0.0f;
+        }
+
+        //Godot methods
+        public override void _Process(float delta)
+        {
+            if (m_ListContainer == null)
+            {
+                RefreshButtons();
+            }
+
+            if (!m_IsAnimating)
+            {
+                return;
+            }
+
+            m_AnimateCurrentTime += delta;
+            float lerp = m_AnimateCurrentTime / c_AnimationTime;
+            Vector2 newPos = new Vector2(Mathf.Lerp(m_AnimateStartPosition.x, m_AnimateTargetPosition.x, lerp), Mathf.Lerp(m_AnimateStartPosition.y, m_AnimateTargetPosition.y, lerp));
+
+            SetPosition(newPos);
+
+            if (m_AnimateCurrentTime >= c_AnimationTime)
+            {
+                m_IsAnimating = false;
+                SetPosition(m_AnimateTargetPosition);
+                m_PanelOpen = !m_PanelOpen;
+                if (m_PanelOpen)
+                {
+                    m_SearchField.GrabFocus();
+                }
+            }
+        }
+
+        public override void _Ready()
+        {
+            foreach (var file in System.IO.Directory.EnumerateFiles("data/database"))
+            {
+                LoadDataBase(file);
+            }
+        }
+
+        private void LoadDataBase(string path)
+        {
+            string rawJson = System.IO.File.ReadAllText(path);
 #if GODOT_WINDOWS
 			string key = path.Split('\\').Last();
 #else
-			string key = path.Split('/').Last();
+            string key = path.Split('/').Last();
 #endif
-			m_Db[key] = (Array) JSON.Parse(rawJson).Result;
-		}
-		public void TogglePanel()
-		{
-			_animateStartPosition = GetRect().Position;
-			_targetPosition = _panelOpen ? TargetClosedPosition : TargetOpenPosition;
-			_isAnimating = true;
-			_animateCurrentTime = 0.0f;
-		}
+            m_Databases[key] = (Array)JSON.Parse(rawJson).Result;
+        }
 
-		bool ShouldForceExpandDictionary(Dictionary dict)
-		{
-			//repeated pattern in the database.
-			return dict.Keys.Count == 3 && ((Array) dict.Keys).Contains("index") &&
-			       ((Array) dict.Keys).Contains("name") && ((Array) dict.Keys).Contains("url");
-		}
-		private void AddTextNode(string text)
-		{
-			VBoxContainer container = (VBoxContainer)GetNode("ScrollContainer/PanelContainer");
+        private bool ShouldForceExpandDictionary(Dictionary dict)
+        {
+            //repeated pattern in the database.
+            return dict.Keys.Count == 3 && ((Array)dict.Keys).Contains("index") && ((Array)dict.Keys).Contains("name") && ((Array)dict.Keys).Contains("url");
+        }
 
-			RichTextLabel textLabel = new RichTextLabel {FitContentHeight = true, BbcodeEnabled = true, BbcodeText = text};
-			//textLabel.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x, textLabel.RectSize.y);
-			textLabel.AddFontOverride("normal_font", _font);
-			textLabel.AddFontOverride("bold_font", _boldFont);
-			container.AddChild(textLabel);
-		}
-		private void AddButtonNode(string text, object obj)
-		{
-			Node container = GetNode("ScrollContainer/PanelContainer");
+        private void AddTextNode(string text)
+        {
+            VBoxContainer container = (VBoxContainer)GetNode("ScrollContainer/PanelContainer");
 
-			Button button = new Button {Text = text};
-			button.Connect("pressed", this, "OnButtonPress", new Array() {obj});
-			button.AddFontOverride("font", _font);
-			//button.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x - 20, button.RectSize.y);
-			container.AddChild(button);
-		}
-		static bool hasUpdated = false;
-		private void PrintDictionary(Dictionary dict, bool expand, bool parentIsArray, string name)
-		{
-			if (expand || parentIsArray)
-			{
-				if (!parentIsArray && name != null)
-				{
-					AddTextNode($"[b]{name}:[/b]");
-				}
-			
-				foreach (DictionaryEntry kvp in dict)
-				{
-					if (kvp.Value is Dictionary)
-					{
-						PrintDictionary(kvp.Value as Dictionary, true, false, kvp.Key.ToString());
-					}
-					else if (kvp.Value is Array arr)
-					{
-						PrintArray(arr, kvp.Key.ToString(), true, false);
-					}
-					else
-					{
-						if ((string) kvp.Key == "index" || (string) kvp.Key == "url")
-						{
-							continue;
-						}
+            RichTextLabel textLabel = new RichTextLabel {FitContentHeight = true, BbcodeEnabled = true, BbcodeText = text};
+            //textLabel.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x, textLabel.RectSize.y);
+            textLabel.AddFontOverride("normal_font", m_Font);
+            textLabel.AddFontOverride("bold_font", m_BoldFont);
+            container.AddChild(textLabel);
+        }
 
-						if ((string) kvp.Key == "name" && parentIsArray || ShouldForceExpandDictionary(dict))
-						{
-							AddTextNode($"{kvp.Value}");
-						}
-						else
-						{
-							AddTextNode($"[b]{kvp.Key}:[/b] {kvp.Value}");
-						}
-					}
-				}
-			}
-			else
-			{
-				if (((Array) dict.Keys).Contains("name"))
-				{
-					AddButtonNode(dict["name"].ToString(), dict);
-				}
-				else
-				{
-					PrintDictionary(dict, true, false, name);
-				}
-			}
-		}
-		private void PrintArray(Array array, string name, bool expand, bool parentIsArray)
-		{
-			Node container = GetNode("ScrollContainer/PanelContainer");
+        private void AddButtonNode(string text, object obj)
+        {
+            Node container = GetNode("ScrollContainer/PanelContainer");
 
-			if (expand)
-			{
-				if (name.Length > 0)
-				{
-					AddTextNode($"[b]{name}:[/b]");
-				}
-			
-				foreach (var arrayVal in array)
-				{
-					if (arrayVal is Dictionary dict)
-					{
-						//dirty hack to force the first menu of each category to be buttons
-						if (backStack.Count > 1 || _searchString.Length > 0)
-						{
-							PrintDictionary(dict, true, true, null);
-						}
-						else
-						{
-							PrintDictionary(dict, false, false, null);
-						}
-					}
-					else
-					{
-						AddTextNode(arrayVal.ToString());
-					}
-				}
-			}
-			else
-			{
-				foreach (var arrayVal in array)
-				{
-					AddButtonNode(name, arrayVal);
-				}
-			}
-		}
+            Button button = new Button {Text = text};
+            button.Connect("pressed", this, "OnButtonPress", new Array() {obj});
+            button.AddFontOverride("font", m_Font);
+            //button.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x - 20, button.RectSize.y);
+            container.AddChild(button);
+        }
 
-		private void RefreshButtons()
-		{
-			Node container = GetNode("ScrollContainer/PanelContainer");
+        private void PrintDictionary(Dictionary dict, bool expand, bool parentIsArray, string name)
+        {
+            if (expand || parentIsArray)
+            {
+                if (!parentIsArray && name != null)
+                {
+                    TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
+                    string titleCaseName = textInfo.ToTitleCase(name.Replace("_", " "));
+                    AddTextNode($"[b]{titleCaseName}:[/b]");
+                }
 
-			foreach (Node child in container.GetChildren())
-			{
-				container.RemoveChild(child);
-			}
-		
-			
-			LineEdit lineEdit = new LineEdit();
-			lineEdit.Connect("text_changed", this, "OnSearchChanged");
-			container.AddChild(lineEdit);
+                foreach (DictionaryEntry kvp in dict)
+                {
+                    if (kvp.Value is Dictionary value)
+                    {
+                        PrintDictionary(value, true, false, kvp.Key.ToString());
+                    }
+                    else if (kvp.Value is Array arr)
+                    {
+                        PrintArray(arr, kvp.Key.ToString(), true);
+                    }
+                    else
+                    {
+                        if ((string)kvp.Key == "index" || (string)kvp.Key == "url")
+                        {
+                            continue;
+                        }
 
-			if (backStack.Count > 0)
-			{
-				Button backButton = new Button();
-				backButton.Text = "Back";
-				backButton.Connect("pressed", this, "OnBackButton");
-				backButton.AddFontOverride("font", _font);
-				container.AddChild(backButton);
-			}
+                        if ((string)kvp.Key == "name" && parentIsArray || ShouldForceExpandDictionary(dict))
+                        {
+                            AddTextNode($"{kvp.Value}");
+                        }
+                        else
+                        {
+                            TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
+                            string titleCaseName = textInfo.ToTitleCase( kvp.Key.ToString().Replace("_", " "));
+                            AddTextNode($"[b]{titleCaseName}:[/b] {kvp.Value}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (((Array)dict.Keys).Contains("name"))
+                {
+                    AddButtonNode(dict["name"].ToString(), dict);
+                }
+                else if (((Array)dict.Keys).Contains("class"))
+                {
+                    AddButtonNode(((Dictionary)dict["class"])["name"].ToString(), dict);
+                }
+                else
+                {
+                    PrintDictionary(dict, true, false, name);
+                }
+            }
+        }
 
-			if (_selectedArray != null)
-			{
-				PrintArray(_selectedArray, "", true, false);
-			}
-			else if (_selectedObject != null)
-			{
-				PrintDictionary(_selectedObject, true, false, null);
-			}
-			else
-			{
-				foreach (var db in m_Db)
-				{
-					TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
-					AddButtonNode(textInfo.ToTitleCase(db.Key.Split(".").First().Replace("-", " ")), db.Value);
-				}
-			}
-		}
+        private void PrintArray(IEnumerable array, string name, bool expand)
+        {
+            if (expand)
+            {
+                if (name.Length > 0)
+                {
+                    TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
+                    string titleCaseName = textInfo.ToTitleCase(name.Replace("_", " "));
+                    AddTextNode($"[b]{titleCaseName}:[/b]");
+                }
 
-		struct SearchResult
-		{
-			public string Name;
-			public object Value;
-		}
+                foreach (object arrayVal in array)
+                {
+                    if (arrayVal is Dictionary dict)
+                    {
+                        //dirty hack to force the first menu of each category to be buttons
+                        if (m_BackStack.Count > 1 || m_SearchString.Length > 0)
+                        {
+                            PrintDictionary(dict, true, true, null);
+                        }
+                        else
+                        {
+                            PrintDictionary(dict, false, false, null);
+                        }
+                    }
+                    else
+                    {
+                        AddTextNode(arrayVal.ToString());
+                    }
+                }
+            }
+            else
+            {
+                foreach (object arrayVal in array)
+                {
+                    AddButtonNode(name, arrayVal);
+                }
+            }
+        }
 
-		List<SearchResult> SearchDictionary(Dictionary dict, string searchString)
-			
-		{
-			List<SearchResult> foundObjects = new List<SearchResult>();
-			if (((Array) dict.Keys).Contains("name"))
-			{
-				if (dict["name"].ToString().Contains(searchString))
-				{
-					foundObjects.Add(new SearchResult {Name = dict["name"].ToString(), Value = dict});
-				}
-			}
-			else
-			{
-				foreach (DictionaryEntry kvp in dict)
-				{
-					if (kvp.Value is Array)
-					{
-						foundObjects.AddRange(SearchArray(kvp.Value as Array, searchString));
-					}
-					else if (kvp.Value is Dictionary)
-					{
-						foundObjects.AddRange(SearchDictionary(kvp.Value as Dictionary, searchString));
-					}
-				}
-			}
+        private void RefreshButtons()
+        {
+            m_ListContainer ??= GetNode("ScrollContainer/PanelContainer");
 
-			return foundObjects;
-		}
+            foreach (Node child in m_ListContainer.GetChildren())
+            {
+                m_ListContainer.RemoveChild(child);
+            }
 
-		List<SearchResult> SearchArray(Array arr, string searchString)
-		{
-			List<SearchResult> foundObjects = new List<SearchResult>();
-			foreach (var value in arr)
-			{
-				if (value is Array)
-				{
-					foundObjects.AddRange(SearchArray(value as Array, searchString));
-				}
-				else if (value is Dictionary)
-				{
-					foundObjects.AddRange(SearchDictionary(value as Dictionary, searchString));
-				}
-			}
+            m_SearchField = new LineEdit();
+            m_SearchField.Connect("text_changed", this, "OnSearchChanged");
+            m_SearchField.Connect("text_entered", this, "OnSearchEnter");
+            m_ListContainer.AddChild(m_SearchField);
+            m_SearchField.GrabFocus();
 
-			return foundObjects;
-		}
+            if (m_BackStack.Count > 0)
+            {
+                Button backButton = new Button {Text = "Back"};
+                backButton.Connect("pressed", this, "OnBackButton");
+                backButton.AddFontOverride("font", m_Font);
+                m_ListContainer.AddChild(backButton);
+            }
 
-		private void OnSearchChanged(string newText)
-		{
-			_searchString = newText;
-			if (newText.Length > 0)
-			{
-				Node container = GetNode("ScrollContainer/PanelContainer");
-				
-				foreach (var child in container.GetChildren())
-				{
-					if (!(child is LineEdit))
-					{
-						Node node = child as Node;
-						container.RemoveChild(node);
-						node = null;
-					}
-				}
-				
-				List<SearchResult> foundObjects = new List<SearchResult>();
-				foreach (var kvp in m_Db)
-				{
-					foundObjects.AddRange(SearchArray(kvp.Value, newText));
-				}
-				
-				foreach (var obj in foundObjects)
-				{
-					AddButtonNode(obj.Name, obj.Value);
-				}
-			}
-			else
-			{
-				RefreshButtons();
-			}
+            if (m_SelectedArray != null)
+            {
+                PrintArray(m_SelectedArray, "", true);
+            }
+            else if (m_SelectedObject != null)
+            {
+                PrintDictionary(m_SelectedObject, true, false, null);
+            }
+            else
+            {
+                foreach ((string key, Array value) in m_Databases)
+                {
+                    TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
+                    AddButtonNode(textInfo.ToTitleCase(key.Split(".").First().Replace("-", " ")), value);
+                }
+            }
+        }
 
-		}
+        private struct SearchResult
+        {
+            public string Name;
+            public object Value;
+        }
 
-		void OnBackButton()
-		{
-			object newObj = backStack.Last();
-			backStack.RemoveAt(backStack.Count - 1);
+        private IEnumerable<SearchResult> SearchDictionary(IDictionary dict, string searchString)
+        {
+            List<SearchResult> foundObjects = new List<SearchResult>();
+            if (((Array)dict.Keys).Contains("name"))
+            {
+                if (dict["name"].ToString().ToLower().Contains(searchString))
+                {
+                    foundObjects.Add(new SearchResult {Name = dict["name"].ToString(), Value = dict});
+                }
+            }
+            else
+            {
+                foreach (DictionaryEntry kvp in dict)
+                {
+                    switch (kvp.Value)
+                    {
+                        case Array array:
+                            foundObjects.AddRange(SearchArray(array, searchString));
+                            break;
+                        case Dictionary value:
+                            foundObjects.AddRange(SearchDictionary(value, searchString));
+                            break;
+                    }
+                }
+            }
 
-			if (newObj is Dictionary)
-			{
-				_selectedObject = newObj as Dictionary;
-				_selectedArray = null;
-			}
-			else
-			{
-				_selectedArray = newObj as Array;
-				_selectedObject = null;
-			}
+            return foundObjects;
+        }
 
-			RefreshButtons();
-		}
-		private void OnButtonPress(object buttonObj)
-		{
-			if (_selectedArray != null)
-			{
-				backStack.Add(_selectedArray);
-			}
-			else
-			{
-				backStack.Add(_selectedObject);
-			}
+        private IEnumerable<SearchResult> SearchArray(IEnumerable arr, string searchString)
+        {
+            List<SearchResult> foundObjects = new List<SearchResult>();
+            foreach (object value in arr)
+            {
+                switch (value)
+                {
+                    case Array array:
+                        foundObjects.AddRange(SearchArray(array, searchString));
+                        break;
+                    case Dictionary dictionary:
+                        foundObjects.AddRange(SearchDictionary(dictionary, searchString));
+                        break;
+                }
+            }
 
-			if (buttonObj is Dictionary)
-			{
-				_selectedObject = (Dictionary) buttonObj;
-				_selectedArray = null;
-			}
-			else if (buttonObj is Array)
-			{
-				_selectedArray = (Array) buttonObj;
-				_selectedObject = null;
-			}
+            return foundObjects;
+        }
 
-			RefreshButtons();
-		}
-	}
+        private static int CommonChars(string left, string right)
+        {
+            return left.GroupBy(c => c).Join(right.GroupBy(c => c), g => g.Key, g => g.Key, (lg, rg) => lg.Zip(rg, (l, r) => l).Count()).Sum();
+        }
+        
+        private void OnSearchChanged(string newText)
+        {
+            m_SearchString = newText.ToLower();
+            if (newText.Length > 0)
+            {
+                Node container = GetNode("ScrollContainer/PanelContainer");
+
+                foreach (object child in container.GetChildren())
+                {
+                    if (child is LineEdit)
+                    {
+                        continue;
+                    }
+
+                    Node node = child as Node;
+                    container.RemoveChild(node);
+                }
+
+                List<SearchResult> foundObjects = new List<SearchResult>();
+                foreach (KeyValuePair<string, Array> kvp in m_Databases)
+                {
+                    foundObjects.AddRange(SearchArray(kvp.Value, m_SearchString));
+                }
+
+                foundObjects.Sort((a, b) =>
+                {
+                    //get the number of characters different between the results and the search string, show the closest matches first.
+                    int diffA = a.Name.Length - CommonChars(a.Name, m_SearchString);
+                    int diffB = b.Name.Length - CommonChars(b.Name, m_SearchString);
+
+                    if (diffA < diffB)
+                    {
+                        return -1;
+                    }
+
+                    if (diffB < diffA)
+                    {
+                        return 1;
+                    }
+
+                    return 0;
+                });
+
+                foreach (SearchResult obj in foundObjects)
+                {
+                    AddButtonNode(obj.Name, obj.Value);
+                }
+            }
+            else
+            {
+                RefreshButtons();
+            }
+        }
+
+        //Event Handlers
+        private void OnSearchEnter(string newText)
+        {
+            if (newText.Length <= 0)
+            {
+                return;
+            }
+
+            Node container = GetNode("ScrollContainer/PanelContainer");
+
+            foreach (object child in container.GetChildren())
+            {
+                if (!(child is Button))
+                {
+                    continue;
+                }
+
+                ((Button)child).EmitSignal("pressed");
+                break;
+            }
+        }
+
+        private void OnBackButton()
+        {
+            m_SearchString = "";
+            object newObj = m_BackStack.Last();
+            m_BackStack.RemoveAt(m_BackStack.Count - 1);
+
+            if (newObj is Dictionary obj)
+            {
+                m_SelectedObject = obj;
+                m_SelectedArray = null;
+            }
+            else
+            {
+                m_SelectedArray = newObj as Array;
+                m_SelectedObject = null;
+            }
+
+            RefreshButtons();
+        }
+
+        private void OnButtonPress(object buttonObj)
+        {
+            if (m_SelectedArray != null)
+            {
+                m_BackStack.Add(m_SelectedArray);
+            }
+            else
+            {
+                m_BackStack.Add(m_SelectedObject);
+            }
+
+            if (buttonObj is Dictionary obj)
+            {
+                m_SelectedObject = obj;
+                m_SelectedArray = null;
+            }
+            else if (buttonObj is Array array)
+            {
+                m_SelectedArray = array;
+                m_SelectedObject = null;
+            }
+
+            RefreshButtons();
+        }
+    }
 }
