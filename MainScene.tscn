@@ -23,7 +23,7 @@ scale = Vector2( 3.82031, 4.565 )
 script = ExtResource( 4 )
 
 [node name="Sprite" type="Sprite" parent="."]
-position = Vector2( 704, 296 )
+position = Vector2( 80.0001, 48.0001 )
 scale = Vector2( 0.625, 0.625 )
 texture = ExtResource( 2 )
 script = ExtResource( 3 )
@@ -36,22 +36,24 @@ script = ExtResource( 5 )
 
 [node name="Canvas" type="CanvasLayer" parent="Camera2D"]
 
-[node name="HUD" type="Node2D" parent="Camera2D/Canvas"]
-show_behind_parent = true
+[node name="HUD" type="Node" parent="Camera2D/Canvas"]
 
 [node name="Panel" type="Panel" parent="Camera2D/Canvas/HUD"]
+anchor_bottom = 1.0
 margin_left = -400.0
-margin_bottom = 600.0
+margin_top = 24.0
 script = ExtResource( 7 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Button" type="Button" parent="Camera2D/Canvas/HUD/Panel"]
+anchor_top = 0.5
+anchor_bottom = 0.5
 margin_left = 400.0
-margin_top = 248.0
+margin_top = -64.192
 margin_right = 432.0
-margin_bottom = 376.0
+margin_bottom = 63.808
 script = ExtResource( 8 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -72,6 +74,34 @@ size_flags_horizontal = 3
 size_flags_vertical = 2
 size_flags_stretch_ratio = 0.7
 alignment = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="MenuBar" type="Node" parent="Camera2D/Canvas/HUD"]
+
+[node name="Background" type="Panel" parent="Camera2D/Canvas/HUD/MenuBar"]
+anchor_right = 1.0
+margin_bottom = 24.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="FileButton" type="ToolButton" parent="Camera2D/Canvas/HUD/MenuBar/Background"]
+margin_right = 40.0
+margin_bottom = 24.0
+rect_pivot_offset = Vector2( 48, 16 )
+text = "File"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Edit" type="ToolButton" parent="Camera2D/Canvas/HUD/MenuBar/Background"]
+margin_left = 40.0
+margin_right = 80.0
+margin_bottom = 24.0
+rect_pivot_offset = Vector2( 48, 16 )
+text = "Edit"
 __meta__ = {
 "_edit_use_anchors_": false
 }
