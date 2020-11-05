@@ -28,20 +28,22 @@ namespace DndAwesome.scripts
         private Array m_SelectedArray;
         private Dictionary m_SelectedObject;
         private readonly DynamicFont m_Font = (DynamicFont)GD.Load("res://fonts/jmHarkam.tres");
+
         private readonly DynamicFont m_BoldFont = (DynamicFont)GD.Load("res://fonts/jmHarkam_bold.tres");
 
         //Search Bar
         private LineEdit m_SearchField;
         private string m_SearchString = "";
 
-        private readonly Godot.Collections.Dictionary<string, Array> m_Databases = new Godot.Collections.Dictionary<string, Array>();
+        private readonly Godot.Collections.Dictionary<string, Array> m_Databases =
+            new Godot.Collections.Dictionary<string, Array>();
 
         //Public Methods
         public bool IsPanelOpen()
         {
             return m_PanelOpen;
         }
-        
+
         public bool IsPanelFocused()
         {
             return m_PanelFocused;
@@ -89,7 +91,8 @@ namespace DndAwesome.scripts
 
             m_AnimateCurrentTime += delta;
             float lerp = m_AnimateCurrentTime / c_AnimationTime;
-            Vector2 newPos = new Vector2(Mathf.Lerp(m_AnimateStartPosition.x, m_AnimateTargetPosition.x, lerp), Mathf.Lerp(m_AnimateStartPosition.y, m_AnimateTargetPosition.y, lerp));
+            Vector2 newPos = new Vector2(Mathf.Lerp(m_AnimateStartPosition.x, m_AnimateTargetPosition.x, lerp),
+                                         Mathf.Lerp(m_AnimateStartPosition.y, m_AnimateTargetPosition.y, lerp));
 
             SetPosition(newPos);
 
@@ -124,18 +127,21 @@ namespace DndAwesome.scripts
             m_Databases[key] = (Array)JSON.Parse(rawJson).Result;
         }
 
-        private bool ShouldForceExpandDictionary(Dictionary dict)
+        private static bool ShouldForceExpandDictionary(IDictionary dict)
         {
             //repeated pattern in the database.
-            return dict.Keys.Count == 3 && ((Array)dict.Keys).Contains("index") && ((Array)dict.Keys).Contains("name") && ((Array)dict.Keys).Contains("url");
+            return dict.Keys.Count == 3 &&
+                   ((Array)dict.Keys).Contains("index") &&
+                   ((Array)dict.Keys).Contains("name") &&
+                   ((Array)dict.Keys).Contains("url");
         }
 
         private void AddTextNode(string text)
         {
             VBoxContainer container = (VBoxContainer)GetNode("ScrollContainer/PanelContainer");
 
-            RichTextLabel textLabel = new RichTextLabel {FitContentHeight = true, BbcodeEnabled = true, BbcodeText = text};
-            //textLabel.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x, textLabel.RectSize.y);
+            RichTextLabel textLabel = new RichTextLabel
+                { FitContentHeight = true, BbcodeEnabled = true, BbcodeText = text };
             textLabel.AddFontOverride("normal_font", m_Font);
             textLabel.AddFontOverride("bold_font", m_BoldFont);
             container.AddChild(textLabel);
@@ -145,10 +151,9 @@ namespace DndAwesome.scripts
         {
             Node container = GetNode("ScrollContainer/PanelContainer");
 
-            Button button = new Button {Text = text};
-            button.Connect("pressed", this, "OnButtonPress", new Array() {obj});
+            Button button = new Button { Text = text };
+            button.Connect("pressed", this, "OnButtonPress", new Array() { obj });
             button.AddFontOverride("font", m_Font);
-            //button.RectMinSize = new Vector2(((ScrollContainer)container.GetParent()).RectSize.x - 20, button.RectSize.y);
             container.AddChild(button);
         }
 
@@ -187,7 +192,7 @@ namespace DndAwesome.scripts
                         else
                         {
                             TextInfo textInfo = new CultureInfo("en-AU", false).TextInfo;
-                            string titleCaseName = textInfo.ToTitleCase( kvp.Key.ToString().Replace("_", " "));
+                            string titleCaseName = textInfo.ToTitleCase(kvp.Key.ToString().Replace("_", " "));
                             AddTextNode($"[b]{titleCaseName}:[/b] {kvp.Value}");
                         }
                     }
@@ -267,7 +272,7 @@ namespace DndAwesome.scripts
 
             if (m_BackStack.Count > 0)
             {
-                Button backButton = new Button {Text = "Back"};
+                Button backButton = new Button { Text = "Back" };
                 backButton.Connect("pressed", this, "OnBackButton");
                 backButton.AddFontOverride("font", m_Font);
                 m_ListContainer.AddChild(backButton);
@@ -304,7 +309,7 @@ namespace DndAwesome.scripts
             {
                 if (dict["name"].ToString().ToLower().Contains(searchString))
                 {
-                    foundObjects.Add(new SearchResult {Name = dict["name"].ToString(), Value = dict});
+                    foundObjects.Add(new SearchResult { Name = dict["name"].ToString(), Value = dict });
                 }
             }
             else
@@ -347,9 +352,14 @@ namespace DndAwesome.scripts
 
         private static int CommonChars(string left, string right)
         {
-            return left.GroupBy(c => c).Join(right.GroupBy(c => c), g => g.Key, g => g.Key, (lg, rg) => lg.Zip(rg, (l, r) => l).Count()).Sum();
+            return left.GroupBy(c => c).
+                        Join(right.GroupBy(c => c),
+                             g => g.Key,
+                             g => g.Key,
+                             (lg, rg) => lg.Zip(rg, (l, r) => l).Count()).
+                        Sum();
         }
-        
+
         private void OnSearchChanged(string newText)
         {
             m_SearchString = newText.ToLower();

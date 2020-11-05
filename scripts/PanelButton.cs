@@ -5,6 +5,7 @@ namespace DndAwesome.scripts
     public class PanelButton : Button
     {
         private DatabasePanel m_Panel;
+
         public override void _Ready()
         {
             m_Panel = GetNode<DatabasePanel>("../");
@@ -22,7 +23,7 @@ namespace DndAwesome.scripts
             {
                 if (inputKey.Control)
                 {
-                    if (inputKey.Scancode == (uint) KeyList.F)
+                    if (inputKey.Scancode == (uint)KeyList.F)
                     {
                         if (m_Panel.IsPanelOpen())
                         {
@@ -34,7 +35,7 @@ namespace DndAwesome.scripts
                         }
                     }
                 }
-                else if (inputKey.Scancode == (uint) KeyList.Escape)
+                else if (inputKey.Scancode == (uint)KeyList.Escape)
                 {
                     if (m_Panel.IsPanelOpen())
                     {
