@@ -6,6 +6,7 @@ namespace DndAwesome.scripts
     {
         //True when the user is holding the middle mouse button.
         private bool m_IsPanning;
+        private DatabasePanel m_DatabasePanel;
 
         public override void _Input(InputEvent input)
         {
@@ -38,11 +39,19 @@ namespace DndAwesome.scripts
 
         private void ZoomCamera(float amount, Vector2 zoomPoint)
         {
-            Vector2 newZoom = Zoom + new Vector2(amount, amount);
-            Vector2 newCameraPosition = Position + zoomPoint * (Zoom - newZoom);
+            if (m_DatabasePanel == null)
+            {
+                m_DatabasePanel = GetNode<DatabasePanel>("Canvas/HUD/Panel");
+            }
 
-            Zoom = newZoom;
-            Position = newCameraPosition;
+            if (!m_DatabasePanel.IsPanelFocused())
+            {
+                Vector2 newZoom = Zoom + new Vector2(amount, amount);
+                Vector2 newCameraPosition = Position + zoomPoint * (Zoom - newZoom);
+
+                Zoom = newZoom;
+                Position = newCameraPosition;
+            }
         }
 
         public Vector2 WorldPosToScreenPos(Vector2 worldPos)

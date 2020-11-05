@@ -20,6 +20,7 @@ namespace DndAwesome.scripts
 
         //State
         private bool m_PanelOpen;
+        private bool m_PanelFocused;
         private readonly List<object> m_BackStack = new List<object>();
 
         //List View
@@ -40,6 +41,12 @@ namespace DndAwesome.scripts
         {
             return m_PanelOpen;
         }
+        
+        public bool IsPanelFocused()
+        {
+            return m_PanelFocused;
+        }
+
 
         public void FocusSearchBox()
         {
@@ -55,6 +62,19 @@ namespace DndAwesome.scripts
         }
 
         //Godot methods
+        public override void _Input(InputEvent input)
+        {
+            if (input is InputEventMouse mouseEvent)
+            {
+                m_PanelFocused = mouseEvent.Position.x > GetRect().Position.x &&
+                                 mouseEvent.Position.y > GetRect().Position.y &&
+                                 mouseEvent.Position.x < GetRect().Position.x + GetRect().Size.x &&
+                                 mouseEvent.Position.y < GetRect().Position.y + GetRect().Size.y;
+            }
+
+            base._Input(input);
+        }
+
         public override void _Process(float delta)
         {
             if (m_ListContainer == null)
