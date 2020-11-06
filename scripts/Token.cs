@@ -10,7 +10,7 @@ namespace DndAwesome.scripts
 
         public override void _Ready()
         {
-            Grid grid = GetNode<Grid>("/root/Root/Map/Grid");
+            Grid grid = GetNode<Grid>("/root/Root/Scene/BackgroundLayer/Background/Grid");
             Vector2 gridTileSize = grid.GetTileSize();
             Scale = new Vector2(gridTileSize.x / GetRect().Size.x, gridTileSize.y / GetRect().Size.y);
         }
@@ -48,27 +48,31 @@ namespace DndAwesome.scripts
             }
             else if (m_ShouldSnapToGrid)
             {
-                Grid grid = GetNode<Grid>("/root/Root/Map/Grid");
+                Grid grid = GetNode<Grid>("/root/Root/Scene/BackgroundLayer/Background/Grid");
                 Vector2 gridTileSize = grid.GetTileSize();
 
-                Vector2 realPos = Position;
-                Vector2 gridPos = ((Map)grid.GetParent()).GetGlobalTransform().Xform(grid.Position);
+                Vector2 gridPos = grid.GlobalPosition;
+                Vector2 relativePosition = GlobalPosition - gridPos;
                 Vector2 halfGridTile = gridTileSize / 2;
 
                 //get the potential snap positions
                 double snapNegativeX = gridPos.x +
-                                       (Math.Round((realPos.x - halfGridTile.x) / gridTileSize.x) * gridTileSize.x +
+                                       (Math.Round((relativePosition.x - halfGridTile.x) / gridTileSize.x) *
+                                        gridTileSize.x +
                                         gridTileSize.x / 2);
                 double snapNegativeY = gridPos.y +
-                                       (Math.Round((realPos.y - halfGridTile.y) / gridTileSize.y) * gridTileSize.y +
+                                       (Math.Round((relativePosition.y - halfGridTile.y) / gridTileSize.y) *
+                                        gridTileSize.y +
                                         gridTileSize.y / 2);
-                double snapPositiveX = gridPos.x +
-                                       (Math.Round(realPos.x / gridTileSize.x) * gridTileSize.x + halfGridTile.x);
-                double snapPositiveY = gridPos.y +
-                                       (Math.Round(realPos.y / gridTileSize.y) * gridTileSize.y + halfGridTile.x);
+                double snapPositiveX = gridPos.x -
+                                       (Math.Round(relativePosition.x / gridTileSize.x) * gridTileSize.x +
+                                        halfGridTile.x);
+                double snapPositiveY = gridPos.y -
+                                       (Math.Round(relativePosition.y / gridTileSize.y) * gridTileSize.y +
+                                        halfGridTile.x);
 
                 float newX, newY;
-                if (Math.Abs(realPos.x - snapNegativeX) < Math.Abs(realPos.x - snapPositiveX))
+                if (Math.Abs(relativePosition.x - snapNegativeX) < Math.Abs(relativePosition.x - snapPositiveX))
                 {
                     newX = (float)snapNegativeX;
                 }
@@ -77,7 +81,7 @@ namespace DndAwesome.scripts
                     newX = (float)snapPositiveX;
                 }
 
-                if (Math.Abs(realPos.y - snapNegativeY) < Math.Abs(realPos.y - snapPositiveY))
+                if (Math.Abs(relativePosition.y - snapNegativeY) < Math.Abs(relativePosition.y - snapPositiveY))
                 {
                     newY = (float)snapNegativeY;
                 }
@@ -86,7 +90,7 @@ namespace DndAwesome.scripts
                     newY = (float)snapPositiveY;
                 }
 
-                Position = new Vector2(newX, newY);
+                GlobalPosition = new Vector2(newX, newY);
 
                 m_ShouldSnapToGrid = false;
             }
