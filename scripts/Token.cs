@@ -10,9 +10,11 @@ namespace DndAwesome.scripts
 
         public override void _Ready()
         {
-            Grid grid = GetNode<Grid>("/root/Root/Scene/BackgroundLayer/Background/Grid");
+            Grid grid = SceneObjectManager.GetGrid();
             Vector2 gridTileSize = grid.GetTileSize();
             Scale = new Vector2(gridTileSize.x / GetRect().Size.x, gridTileSize.y / GetRect().Size.y);
+            
+            SceneObjectManager.RegisterToken(this);
         }
 
         public override void _Input(InputEvent input)
@@ -21,13 +23,14 @@ namespace DndAwesome.scripts
             {
                 if (mouseButtonEvent.ButtonIndex == 1 && mouseButtonEvent.Pressed)
                 {
-                    Camera2D camera = GetNode<Camera2D>("/root/Root/Camera2D");
+                    Camera2D camera = SceneObjectManager.GetCamera();
                     Vector2 worldPos = GetGlobalTransform().Xform(GetRect().Position);
                     Vector2 translatedMousePos = camera.WorldPosToScreenPos(mouseButtonEvent.Position);
-                    if (translatedMousePos.x > worldPos.x &&
-                        translatedMousePos.y > worldPos.y &&
-                        translatedMousePos.x < worldPos.x + GetRect().Size.x &&
-                        translatedMousePos.y < worldPos.y + GetRect().Size.y)
+                    Vector2 realMousePos = translatedMousePos - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+                    if (realMousePos.x > worldPos.x &&
+                        realMousePos.y > worldPos.y &&    
+                        realMousePos.x < worldPos.x + GetRect().Size.x &&
+                        realMousePos.y < worldPos.y + GetRect().Size.y)
                     {
                         m_FollowingMouse = !m_FollowingMouse;
                         if (!m_FollowingMouse)
@@ -41,33 +44,35 @@ namespace DndAwesome.scripts
 
         public override void _Process(float delta)
         {
-            Camera2D camera = GetNode<Camera2D>("/root/Root/Camera2D");
+            Camera2D camera = SceneObjectManager.GetCamera();
             if (m_FollowingMouse)
             {
-                Position = camera.WorldPosToScreenPos(GetViewport().GetMousePosition());
+                Position = camera.WorldPosToScreenPos(GetViewport().GetMousePosition()) - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
             }
             else if (m_ShouldSnapToGrid)
             {
-                Grid grid = GetNode<Grid>("/root/Root/Scene/BackgroundLayer/Background/Grid");
+                Grid grid = SceneObjectManager.GetGrid();
                 Vector2 gridTileSize = grid.GetTileSize();
-
-                Vector2 gridPos = grid.GlobalPosition;
-                Vector2 relativePosition = GlobalPosition - gridPos;
+                
+                Vector2 gridPosWindow = grid.GlobalPosition - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+                Vector2 tokenPosWindow = GlobalPosition - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+                
+                Vector2 relativePosition = tokenPosWindow - gridPosWindow;
                 Vector2 halfGridTile = gridTileSize / 2;
 
                 //get the potential snap positions
-                double snapNegativeX = gridPos.x +
+                double snapNegativeX = gridPosWindow.x +
                                        (Math.Round((relativePosition.x - halfGridTile.x) / gridTileSize.x) *
                                         gridTileSize.x +
                                         gridTileSize.x / 2);
-                double snapNegativeY = gridPos.y +
+                double snapNegativeY = gridPosWindow.y +
                                        (Math.Round((relativePosition.y - halfGridTile.y) / gridTileSize.y) *
                                         gridTileSize.y +
                                         gridTileSize.y / 2);
-                double snapPositiveX = gridPos.x -
+                double snapPositiveX = gridPosWindow.x +
                                        (Math.Round(relativePosition.x / gridTileSize.x) * gridTileSize.x +
                                         halfGridTile.x);
-                double snapPositiveY = gridPos.y -
+                double snapPositiveY = gridPosWindow.y +
                                        (Math.Round(relativePosition.y / gridTileSize.y) * gridTileSize.y +
                                         halfGridTile.x);
 
@@ -90,7 +95,7 @@ namespace DndAwesome.scripts
                     newY = (float)snapPositiveY;
                 }
 
-                GlobalPosition = new Vector2(newX, newY);
+                Position = new Vector2(newX, newY) + SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
 
                 m_ShouldSnapToGrid = false;
             }

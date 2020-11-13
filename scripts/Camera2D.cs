@@ -1,3 +1,4 @@
+using DndAwesome.scripts.UI.ToolWindow;
 using Godot;
 
 namespace DndAwesome.scripts
@@ -7,6 +8,12 @@ namespace DndAwesome.scripts
         //True when the user is holding the middle mouse button.
         private bool m_IsPanning;
         private DatabasePanel m_DatabasePanel;
+
+        public override void _Ready()
+        {
+            Current = true;
+            SceneObjectManager.SetCamera(this);
+        }
 
         public override void _Input(InputEvent input)
         {
@@ -39,12 +46,7 @@ namespace DndAwesome.scripts
 
         private void ZoomCamera(float amount, Vector2 zoomPoint)
         {
-            if (m_DatabasePanel == null)
-            {
-                m_DatabasePanel = GetNode<DatabasePanel>("Canvas/HUD/Panel");
-            }
-
-            if (!m_DatabasePanel.IsPanelFocused())
+            if (SceneObjectManager.GetGameWindow().GetParent<ToolWindow>().Focused)
             {
                 Vector2 newZoom = Zoom + new Vector2(amount, amount);
                 Vector2 newCameraPosition = Position + zoomPoint * (Zoom - newZoom);

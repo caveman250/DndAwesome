@@ -8,10 +8,10 @@ namespace DndAwesome.scripts
         public Vector2 m_Size = new Vector2(750, 750);
         public override void _Ready()
         {
-            Camera2D camera = GetNode<Camera2D>("/root/Root/Camera2D");
+            Camera2D camera = SceneObjectManager.GetCamera();
             SetPosition(camera.Position + camera.GetViewport().Size / 2 - m_Size / 2);
             SetSize(m_Size);
-            GetNode<Grid>("Grid").SetGridSize(m_Size);
+            SceneObjectManager.GetGrid().SetGridSize(m_Size);
             base._Ready();
         }
 

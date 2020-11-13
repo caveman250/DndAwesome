@@ -7,19 +7,8 @@ using Godot.Collections;
 
 namespace DndAwesome.scripts
 {
-    public class DatabasePanel : Panel
+    public class DatabasePanel : ReferenceRect
     {
-        //Animation
-        private bool m_IsAnimating;
-        private Vector2 m_AnimateStartPosition;
-        private Vector2 m_AnimateTargetPosition;
-        private const float c_AnimationTime = 0.2f;
-        private readonly Vector2 m_TargetOpenPosition = new Vector2(0.0f, 24.0f);
-        private readonly Vector2 m_TargetClosedPosition = new Vector2(-400.0f, 24.0f);
-        private float m_AnimateCurrentTime;
-
-        //State
-        private bool m_PanelOpen;
         private bool m_PanelFocused;
         private readonly List<object> m_BackStack = new List<object>();
 
@@ -39,28 +28,10 @@ namespace DndAwesome.scripts
             new Godot.Collections.Dictionary<string, Array>();
 
         //Public Methods
-        public bool IsPanelOpen()
-        {
-            return m_PanelOpen;
-        }
 
         public bool IsPanelFocused()
         {
             return m_PanelFocused;
-        }
-
-
-        public void FocusSearchBox()
-        {
-            m_SearchField.GrabFocus();
-        }
-
-        public void TogglePanel()
-        {
-            m_AnimateStartPosition = GetRect().Position;
-            m_AnimateTargetPosition = m_PanelOpen ? m_TargetClosedPosition : m_TargetOpenPosition;
-            m_IsAnimating = true;
-            m_AnimateCurrentTime = 0.0f;
         }
 
         //Godot methods
@@ -83,34 +54,11 @@ namespace DndAwesome.scripts
             {
                 RefreshButtons();
             }
-
-            if (!m_IsAnimating)
-            {
-                return;
-            }
-
-            m_AnimateCurrentTime += delta;
-            float lerp = m_AnimateCurrentTime / c_AnimationTime;
-            Vector2 newPos = new Vector2(Mathf.Lerp(m_AnimateStartPosition.x, m_AnimateTargetPosition.x, lerp),
-                                         Mathf.Lerp(m_AnimateStartPosition.y, m_AnimateTargetPosition.y, lerp));
-
-            SetPosition(newPos);
-
-            if (m_AnimateCurrentTime >= c_AnimationTime)
-            {
-                m_IsAnimating = false;
-                SetPosition(m_AnimateTargetPosition);
-                m_PanelOpen = !m_PanelOpen;
-                if (m_PanelOpen)
-                {
-                    m_SearchField.GrabFocus();
-                }
-            }
         }
 
         public override void _Ready()
         {
-            foreach (var file in System.IO.Directory.EnumerateFiles("data/database"))
+            foreach (string file in System.IO.Directory.EnumerateFiles("data/database"))
             {
                 LoadDataBase(file);
             }
@@ -154,6 +102,7 @@ namespace DndAwesome.scripts
             Button button = new Button { Text = text };
             button.Connect("pressed", this, "OnButtonPress", new Array() { obj });
             button.AddFontOverride("font", m_Font);
+            button.Align = Button.TextAlign.Left;
             container.AddChild(button);
         }
 
@@ -262,19 +211,20 @@ namespace DndAwesome.scripts
             foreach (Node child in m_ListContainer.GetChildren())
             {
                 m_ListContainer.RemoveChild(child);
+                child.QueueFree();
             }
 
             m_SearchField = new LineEdit();
             m_SearchField.Connect("text_changed", this, "OnSearchChanged");
             m_SearchField.Connect("text_entered", this, "OnSearchEnter");
             m_ListContainer.AddChild(m_SearchField);
-            m_SearchField.GrabFocus();
 
             if (m_BackStack.Count > 0)
             {
                 Button backButton = new Button { Text = "Back" };
                 backButton.Connect("pressed", this, "OnBackButton");
                 backButton.AddFontOverride("font", m_Font);
+                backButton.Align = Button.TextAlign.Left;
                 m_ListContainer.AddChild(backButton);
             }
 
@@ -376,6 +326,7 @@ namespace DndAwesome.scripts
 
                     Node node = child as Node;
                     container.RemoveChild(node);
+                    node.QueueFree();
                 }
 
                 List<SearchResult> foundObjects = new List<SearchResult>();

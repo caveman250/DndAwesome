@@ -10,7 +10,7 @@ namespace DndAwesome.scripts
         
         public override void _Ready()
         {
-            
+            SceneObjectManager.SetGrid(this);
         }
 
         public void SetGridSize(Vector2 size)

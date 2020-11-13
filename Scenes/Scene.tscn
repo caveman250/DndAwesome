@@ -2,11 +2,16 @@
 
 [ext_resource path="res://images/SceneBackground.jpg" type="Texture" id=1]
 [ext_resource path="res://scripts/Map.cs" type="Script" id=2]
-[ext_resource path="res://Scenes/Scene.cs" type="Script" id=3]
+[ext_resource path="res://scripts/Scene.cs" type="Script" id=3]
 [ext_resource path="res://scripts/Grid.cs" type="Script" id=5]
 
-[node name="Scene" type="Node"]
+[node name="Scene" type="Control"]
+margin_right = 432.0
+margin_bottom = 400.0
 script = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="BackgroundLayer" type="Node" parent="."]
 

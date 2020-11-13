@@ -16,9 +16,8 @@ namespace DndAwesome.scripts
             var scenePrefab = GD.Load<PackedScene>("res://Scenes/Scene.tscn");
             Scene scene = scenePrefab.Instance() as Scene;
             scene.BackgroundImages.Add("res://images/ham.png");
-            scene.TokenLayerTokens.Add("res://Scenes/PlayerToken.tscn");
-         
-            GetNode<Node2D>("/root/Root").CallDeferred("add_child", scene);
+            scene.TokenLayerTokens.Add("res://Prefabs/PlayerToken.tscn");
+            SceneObjectManager.GetCamera().CallDeferred("add_child", scene);
         }
     }
 }

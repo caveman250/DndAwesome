@@ -7,6 +7,7 @@ namespace DndAwesome.scripts
     public class Scene : Node
     {
         private Node m_BackgroundLayer;
+        private Node m_TokenLayer;
         
         public List<string> BackgroundImages = new List<string>();
         public List<string> TokenLayerTokens = new List<string>();
@@ -21,6 +22,7 @@ namespace DndAwesome.scripts
         public void LoadScene()
         {
             m_BackgroundLayer = GetNode("BackgroundLayer");
+            m_TokenLayer = GetNode("TokenLayer");
             
             foreach (string imagePath in BackgroundImages)
             {
@@ -37,7 +39,7 @@ namespace DndAwesome.scripts
                 PackedScene tokenScene = GD.Load<PackedScene>(tokenPath);
                 Token token = tokenScene.Instance() as Token;
                 
-                m_BackgroundLayer.AddChild(token);
+                m_TokenLayer.AddChild(token);
             }
         }
     }
