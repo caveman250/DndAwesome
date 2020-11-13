@@ -14,3 +14,4 @@ data_*/
 addons/MonoDebuggerQM
 /DndAwesome.pck
 /DndAwesome.x86_64
+mono_crash*
