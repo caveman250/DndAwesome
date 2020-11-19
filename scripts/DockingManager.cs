@@ -1,10 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices.WindowsRuntime;
 using DndAwesome.scripts.UI.ToolWindow;
 using Godot;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using File = System.IO.File;
 
 namespace DndAwesome.scripts
 {
@@ -16,12 +20,32 @@ namespace DndAwesome.scripts
         private static DockingManager s_Instance;
         private static Vector2 s_CachedWindowAreaSize;
         private static Control s_DockRoot = null;
+        private static bool s_ShouldSave;
+        private static int s_LastSaveTime = 0;
+        private static int s_NumSecondsBetweenSaves = 5;
 
         public override void _Ready()
         {
             s_Instance = this;
             GetTree().Root.Connect("size_changed", this, "OnWindowResized");
+
             base._Ready();
+        }
+
+        public override void _Process(float delta)
+        {
+            TimeSpan t = (DateTime.UtcNow - new DateTime(1970, 1, 1));
+            if (t.TotalSeconds > s_LastSaveTime + s_NumSecondsBetweenSaves)
+            {
+                if (s_ShouldSave && s_DockRoot != null)
+                {
+                    SaveDockLayoutInternal();
+                }
+
+                s_LastSaveTime = (int)t.TotalSeconds;
+            }
+
+            base._Process(delta);
         }
 
         public static void SetCurrentWindowAreaSize(Vector2 size)
@@ -139,6 +163,8 @@ namespace DndAwesome.scripts
 
             newContainer.SplitOffset = splitOffset;
             s_DockRoot = newContainer;
+            
+            SaveDockLayout();
         }
 
         private static void DoDockToOtherWindow(Node window, Node otherWindow, DockAction action)
@@ -198,6 +224,8 @@ namespace DndAwesome.scripts
             {
                 toolWindow.IsDocked = true;
             }
+
+            SaveDockLayout();
         }
 
         private static void PerformDockingAction(ToolWindow window, DockGuide guide)
@@ -345,6 +373,12 @@ namespace DndAwesome.scripts
 
                 parent.Free();
             }
+            else if (s_DockRoot == window)
+            {
+                s_DockRoot = null;
+            }
+
+            SaveDockLayout();
         }
 
         public enum DockAction
@@ -468,6 +502,231 @@ namespace DndAwesome.scripts
             }
 
             s_Instance.Update();
+        }
+
+        private enum SerialisedDockItemType
+        {
+            SplitContainer,
+            Window,
+            Placeholder
+        }
+
+        class SerialisedDockItem
+        {
+            public SerialisedDockItemType Type { get; set; } 
+        }
+
+        class SerialisedDockContainer : SerialisedDockItem
+        {
+            public SerialisedDockContainer()
+            {
+                Type = SerialisedDockItemType.SplitContainer;
+            }
+
+            public bool Vertical { get; set; }
+            public SerialisedDockItem[] Children { get; set; }
+            public int SplitOffset { get; set; }
+        }
+        
+        class SerialisedDockWindow : SerialisedDockItem
+        {
+            public SerialisedDockWindow()
+            {
+                Type = SerialisedDockItemType.Window;
+            }
+            public string WindowName { get; set; }
+        }
+        
+        class SerialisedDockPlaceholder : SerialisedDockItem
+        {
+            public SerialisedDockPlaceholder()
+            {
+                Type = SerialisedDockItemType.Placeholder;
+            }
+        }
+
+        private static void SaveDockLayoutInternal()
+        {
+            SerialisedDockItem rootItem = null;
+            if (s_DockRoot != null)
+            {
+                if (s_DockRoot is ToolWindow window)
+                {
+                    rootItem = SerialiseDockWindow(window);
+                }
+                else if (s_DockRoot is SplitContainer container)
+                {
+                    rootItem = SerialiseSplitContainer(container);
+                }
+            }
+
+            string jsonValue = JsonConvert.SerializeObject(rootItem);
+            if (jsonValue == "null")
+            {
+                int lol = 1;
+            }
+
+            File.WriteAllText("dockstate.sav",jsonValue);
+            s_ShouldSave = false;
+        }
+
+        
+        public static void SaveDockLayout()
+        {
+            s_ShouldSave = true;
+        }
+
+        public static void LoadDockState()
+        {
+            if (File.Exists("dockstate.sav"))
+            {
+                string savedDockState = File.ReadAllText("dockstate.sav");
+                JObject currNode = JsonConvert.DeserializeObject<JObject>(savedDockState);
+                SerialisedDockItem rootItem = DeserialiseDockItem(currNode);
+                RestoreDockItemSavedState(rootItem, HUDPlayer.DockArea);
+            }
+        }
+
+        private static void RestoreDockItemSavedState(SerialisedDockItem item, Control parent)
+        {
+            if (item is SerialisedDockWindow serialisedWindow)
+            {
+                ToolWindow window = HUDPlayer.FloatingArea.GetNode<ToolWindow>(serialisedWindow.WindowName);
+                window.GetParent().RemoveChild(window);
+                parent.AddChild(window);
+                if (!(parent is SplitContainer))
+                {
+                    window.SetSize(parent.RectSize);
+                    window.SetPosition(new Vector2(0, 0));
+                }
+
+                window.IsDocked = true;
+
+                if (s_DockRoot == null)
+                {
+                    s_DockRoot = window;
+                }
+            }
+            else if (item is SerialisedDockContainer serialisedContainer)
+            {
+                SplitContainer container = null;
+                if (serialisedContainer.Vertical)
+                {
+                    container = new VSplitContainer();
+                }
+                else
+                {
+                    container = new HSplitContainer();
+                }
+
+                parent.AddChild(container);
+
+                if (!(parent is SplitContainer))
+                {
+                    container.SetSize(HUDPlayer.DockArea.RectSize);
+                }
+
+                foreach (SerialisedDockItem child in serialisedContainer.Children)
+                {
+                    RestoreDockItemSavedState(child, container);
+                }
+
+                container.SplitOffset = serialisedContainer.SplitOffset;
+
+                if (s_DockRoot == null)
+                {
+                    s_DockRoot = container;
+                }
+            }
+            else if (item is SerialisedDockPlaceholder serialisedDockPlaceholder)
+            {
+                PackedScene placeholderRect = GD.Load<PackedScene>("res://Layouts/DockPlaceholder.tscn");
+                s_DockPlaceholder = placeholderRect.Instance() as ReferenceRect;
+                parent.AddChild(s_DockPlaceholder);
+            }
+        }
+        
+        
+
+        static SerialisedDockItem DeserialiseDockItem(JObject item)
+        {
+            SerialisedDockItem dockItem = null;
+
+            int typInt = (int)item["Type"];
+            SerialisedDockItemType type = (SerialisedDockItemType)typInt;
+            switch (type)
+            {
+                case SerialisedDockItemType.SplitContainer:
+                {
+                    SerialisedDockContainer container = new SerialisedDockContainer();
+                    container.Vertical = (bool)item["Vertical"];
+                    List<SerialisedDockItem> children = new List<SerialisedDockItem>();
+                    foreach (JObject child in item["Children"])
+                    {
+                        children.Add(DeserialiseDockItem(child));
+                    }
+            
+                    container.Children = children.ToArray();
+                    container.SplitOffset = (int)item["SplitOffset"];
+                    dockItem = container;
+
+                    break;
+                }
+                case SerialisedDockItemType.Window:
+                {
+                    SerialisedDockWindow window = new SerialisedDockWindow();
+                    window.WindowName = (string)item["WindowName"];
+                    dockItem = window;
+                    break;
+                }
+                case SerialisedDockItemType.Placeholder:
+                {
+                    SerialisedDockPlaceholder placeholder = new SerialisedDockPlaceholder();
+                    dockItem = placeholder;
+                    break;
+                }
+            }
+
+            return dockItem;
+        }
+
+        private static SerialisedDockWindow SerialiseDockWindow(ToolWindow toolWindow)
+        {
+            SerialisedDockWindow window = new SerialisedDockWindow();
+            window.WindowName = toolWindow.Name;
+
+            return window;
+        }
+        private static SerialisedDockContainer SerialiseSplitContainer(SplitContainer splitContainer)
+        {
+            SerialisedDockContainer container = new SerialisedDockContainer();
+            container.Vertical = splitContainer is VSplitContainer;
+            container.Children = SerialiseContainerChildren(splitContainer);
+            container.SplitOffset = splitContainer.SplitOffset;
+
+            return container;
+        }
+
+        private static SerialisedDockItem[] SerialiseContainerChildren(SplitContainer container)
+        {
+            List<SerialisedDockItem> dockItems = new List<SerialisedDockItem>();
+            foreach (Node child in container.GetChildren())
+            {
+                if (child is SplitContainer splitContainer)
+                {
+                    dockItems.Add(SerialiseSplitContainer(splitContainer));
+                }
+                else if (child is ToolWindow window)
+                {
+                    dockItems.Add(SerialiseDockWindow(window));
+                }
+                else
+                {
+                    dockItems.Add(new SerialisedDockPlaceholder());
+                }
+            }
+
+            return dockItems.ToArray();
         }
     }
 }

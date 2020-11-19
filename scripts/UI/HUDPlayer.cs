@@ -4,8 +4,17 @@ using DndAwesome.scripts;
 
 public class HUDPlayer : Control
 {
+    public static Control WindowArea { get; private set; }
+    public static Control DockArea { get; private set; }
+    public static Control FloatingArea { get; private set; }
+
     public override void _Ready()
     {
-        DockingManager.SetCurrentWindowAreaSize(GetNode<Control>("Windows").RectSize);
+        WindowArea = GetNode<Control>("Windows");
+        DockArea = WindowArea.GetNode<Control>("DockArea");
+        FloatingArea = WindowArea.GetNode<Control>("FloatingArea");
+        
+        DockingManager.SetCurrentWindowAreaSize(WindowArea.RectSize);
+        DockingManager.LoadDockState();
     }
 }

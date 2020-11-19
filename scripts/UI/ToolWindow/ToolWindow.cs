@@ -40,6 +40,12 @@ namespace DndAwesome.scripts.UI.ToolWindow
             DockingManager.RegisterToolWindow(this);
             Connect("mouse_entered", this, "OnMouseEnter");
             Connect("mouse_exited", this, "OnMouseExit");
+            Connect("resized", this, "OnWindowResized");
+        }
+
+        private void OnWindowResized()
+        {
+            DockingManager.SaveDockLayout();
         }
 
         private void SetCursorTypeForResizeDirection(ResizeDirection direction)
