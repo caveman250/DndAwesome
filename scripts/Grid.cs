@@ -22,7 +22,7 @@ namespace DndAwesome.scripts
         {
             if (m_GridSize.x > 0 && m_GridSize.y > 0)
             {
-                Map background = GetParent() as Map;
+                Map background = GetParent().GetNode<Map>("Background");
                 
                 for (int x = 0; x < m_GridSize.x; ++x)
                 {

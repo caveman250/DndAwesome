@@ -25,7 +25,8 @@ namespace DndAwesome.scripts
             BackgroundLayer = GetNode("BackgroundLayer");
             TokenLayer = GetNode("TokenLayer");
             DmLayer = GetNode("DMLayer");
-            
+
+            Node insertBelow = BackgroundLayer.GetNode("ChildEntryPoint");
             foreach (string imagePath in BackgroundImages)
             {
                 PackedScene tokenScene = GD.Load<PackedScene>("res://Prefabs/BackgroundImage.tscn");
@@ -33,7 +34,7 @@ namespace DndAwesome.scripts
                 Texture image = GD.Load<Texture>(imagePath);
                 backgroundImage.Texture = image;
                 backgroundImage.RectSize = new Vector2(500, 500);
-                BackgroundLayer.AddChild(backgroundImage);
+                BackgroundLayer.AddChildBelowNode(insertBelow, backgroundImage);
             }
             
             foreach (string tokenPath in TokenLayerTokens)

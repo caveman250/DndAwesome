@@ -24,7 +24,7 @@ namespace DndAwesome.scripts
             {
                 if (mouseButtonEvent.ButtonIndex == 1 && mouseButtonEvent.Pressed)
                 {
-                    if (window.isMousePointInBounds(mouseButtonEvent.Position, this))
+                    if (window.IsMousePointInBounds(mouseButtonEvent.Position, this))
                     {
                         m_FollowingMouse = !m_FollowingMouse;
                         if (!m_FollowingMouse)

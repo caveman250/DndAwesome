@@ -76,35 +76,35 @@ namespace DndAwesome.scripts
             if (inputEvent is InputEventMouse mouseEvent)
             {
                 ResizeDirectionEnum potentialResizeDirection = ResizeDirectionEnum.None;
-                if (window.isMousePointInBounds(mouseEvent.Position, TopLeftDrag))
+                if (window.IsMousePointInBounds(mouseEvent.Position, TopLeftDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.TopLeft;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, MidTopDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, MidTopDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.Top;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, TopRightDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, TopRightDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.TopRight;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, MidRightDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, MidRightDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.Right;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, BottomRightDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, BottomRightDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.BottomRight;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, MidBottomDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, MidBottomDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.Bottom;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, BottomLeftDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, BottomLeftDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.BottomLeft;
                 }
-                else if (window.isMousePointInBounds(mouseEvent.Position, MidLeftDrag))
+                else if (window.IsMousePointInBounds(mouseEvent.Position, MidLeftDrag))
                 {
                     potentialResizeDirection = ResizeDirectionEnum.Left;
                 }
@@ -127,7 +127,7 @@ namespace DndAwesome.scripts
                             }
                             else
                             {
-                                if (window.isMousePointInBounds(buttonEvent.Position, this))
+                                if (window.IsMousePointInBounds(buttonEvent.Position, this))
                                 {
                                     IsSelected = true;
                                     GetNode<Control>("ResizeGroup").Visible = true;

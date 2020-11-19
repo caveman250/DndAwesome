@@ -16,10 +16,6 @@ namespace DndAwesome.scripts.UI
         public override void _Input(InputEvent @event)
         {
             SceneObjectManager.GetCamera()._Input(@event);
-            // foreach (Token token in SceneObjectManager.GetTokens())
-            // {
-            //     token._Input(@event);
-            // }
 
             Scene scene = SceneObjectManager.GetCamera().GetNode<Scene>("Scene");
             if (scene != null)
@@ -54,7 +50,7 @@ namespace DndAwesome.scripts.UI
             return screenPos + SceneObjectManager.GetGameWindow().RectGlobalPosition * SceneObjectManager.GetCamera().Zoom;
         }
 
-        public bool isMousePointInBounds(Vector2 mousePos, Control control)
+        public bool IsMousePointInBounds(Vector2 mousePos, Control control)
         {
             Camera2D camera = SceneObjectManager.GetCamera();
             Vector2 controlScreenPos = GetScreenPosFromGameViewPos(control.RectGlobalPosition);
