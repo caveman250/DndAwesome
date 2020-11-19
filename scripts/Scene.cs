@@ -6,8 +6,9 @@ namespace DndAwesome.scripts
 {
     public class Scene : Node
     {
-        private Node m_BackgroundLayer;
-        private Node m_TokenLayer;
+        public Node BackgroundLayer { get; set; }
+        public Node TokenLayer { get; set; }
+        public Node DmLayer { get; set; }
         
         public List<string> BackgroundImages = new List<string>();
         public List<string> TokenLayerTokens = new List<string>();
@@ -21,17 +22,18 @@ namespace DndAwesome.scripts
 
         public void LoadScene()
         {
-            m_BackgroundLayer = GetNode("BackgroundLayer");
-            m_TokenLayer = GetNode("TokenLayer");
+            BackgroundLayer = GetNode("BackgroundLayer");
+            TokenLayer = GetNode("TokenLayer");
+            DmLayer = GetNode("DMLayer");
             
             foreach (string imagePath in BackgroundImages)
             {
-                TextureRect textureRect = new TextureRect();
+                PackedScene tokenScene = GD.Load<PackedScene>("res://Prefabs/BackgroundImage.tscn");
+                BackgroundImage backgroundImage = tokenScene.Instance() as BackgroundImage;
                 Texture image = GD.Load<Texture>(imagePath);
-                textureRect.Texture = image;
-                textureRect.RectSize = new Vector2(500, 500);
-                
-                m_BackgroundLayer.AddChild(textureRect);
+                backgroundImage.Texture = image;
+                backgroundImage.RectSize = new Vector2(500, 500);
+                BackgroundLayer.AddChild(backgroundImage);
             }
             
             foreach (string tokenPath in TokenLayerTokens)
@@ -39,7 +41,15 @@ namespace DndAwesome.scripts
                 PackedScene tokenScene = GD.Load<PackedScene>(tokenPath);
                 Token token = tokenScene.Instance() as Token;
                 
-                m_TokenLayer.AddChild(token);
+                TokenLayer.AddChild(token);
+            }
+            
+            foreach (string tokenPath in DMLayerTokens)
+            {
+                PackedScene tokenScene = GD.Load<PackedScene>(tokenPath);
+                Token token = tokenScene.Instance() as Token;
+                
+                DmLayer.AddChild(token);
             }
         }
     }

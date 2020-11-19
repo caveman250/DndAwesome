@@ -1,9 +1,10 @@
 using System;
+using DndAwesome.scripts.UI;
 using Godot;
 
 namespace DndAwesome.scripts
 {
-    public class Token : Sprite
+    public class Token : TextureRect
     {
         private bool m_FollowingMouse;
         private bool m_ShouldSnapToGrid;
@@ -11,26 +12,19 @@ namespace DndAwesome.scripts
         public override void _Ready()
         {
             Grid grid = SceneObjectManager.GetGrid();
-            Vector2 gridTileSize = grid.GetTileSize();
-            Scale = new Vector2(gridTileSize.x / GetRect().Size.x, gridTileSize.y / GetRect().Size.y);
-            
+            SetSize(grid.GetTileSize());
             SceneObjectManager.RegisterToken(this);
         }
 
         public override void _Input(InputEvent input)
         {
+            GameWindow window = SceneObjectManager.GetGameWindow();
+            
             if (input is InputEventMouseButton mouseButtonEvent)
             {
                 if (mouseButtonEvent.ButtonIndex == 1 && mouseButtonEvent.Pressed)
                 {
-                    Camera2D camera = SceneObjectManager.GetCamera();
-                    Vector2 worldPos = GetGlobalTransform().Xform(GetRect().Position);
-                    Vector2 translatedMousePos = camera.WorldPosToScreenPos(mouseButtonEvent.Position);
-                    Vector2 realMousePos = translatedMousePos - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
-                    if (realMousePos.x > worldPos.x &&
-                        realMousePos.y > worldPos.y &&    
-                        realMousePos.x < worldPos.x + GetRect().Size.x &&
-                        realMousePos.y < worldPos.y + GetRect().Size.y)
+                    if (window.isMousePointInBounds(mouseButtonEvent.Position, this))
                     {
                         m_FollowingMouse = !m_FollowingMouse;
                         if (!m_FollowingMouse)
@@ -44,18 +38,19 @@ namespace DndAwesome.scripts
 
         public override void _Process(float delta)
         {
+            GameWindow window = SceneObjectManager.GetGameWindow();
             Camera2D camera = SceneObjectManager.GetCamera();
             if (m_FollowingMouse)
             {
-                Position = camera.WorldPosToScreenPos(GetViewport().GetMousePosition()) - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+                SetPosition(window.GetGameViewPosFromScreenPos(camera.WorldPosToScreenPos(GetViewport().GetMousePosition())) - RectSize / 2);
             }
             else if (m_ShouldSnapToGrid)
             {
                 Grid grid = SceneObjectManager.GetGrid();
                 Vector2 gridTileSize = grid.GetTileSize();
-                
-                Vector2 gridPosWindow = grid.GlobalPosition - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
-                Vector2 tokenPosWindow = GlobalPosition - SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+
+                Vector2 gridPosWindow = window.GetGameViewPosFromScreenPos(grid.GlobalPosition);
+                Vector2 tokenPosWindow = window.GetGameViewPosFromScreenPos(RectGlobalPosition) + RectSize / 2;
                 
                 Vector2 relativePosition = tokenPosWindow - gridPosWindow;
                 Vector2 halfGridTile = gridTileSize / 2;
@@ -95,7 +90,7 @@ namespace DndAwesome.scripts
                     newY = (float)snapPositiveY;
                 }
 
-                Position = new Vector2(newX, newY) + SceneObjectManager.GetGameWindow().RectGlobalPosition * camera.Zoom;
+                SetPosition(window.GetScreenPosFromGameViewPos(new Vector2(newX, newY)) - RectSize / 2);
 
                 m_ShouldSnapToGrid = false;
             }
