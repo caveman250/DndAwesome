@@ -17,7 +17,12 @@ namespace DndAwesome.scripts.UI
         public override void _Input(InputEvent @event)
         {
             base._Input(@event);
-            
+
+            if (!GetParent<ToolWindow.ToolWindow>().Focused)
+            {
+                return;
+            }
+
             SceneObjectManager.GetCamera()._Input(@event);
 
             Scene scene = SceneObjectManager.GetCamera().GetNode<Scene>("Scene");
@@ -56,27 +61,15 @@ namespace DndAwesome.scripts.UI
             }
         }
 
-        //only applies to children of GameWindow.
-        public Vector2 GetGameViewPosFromScreenPos(Vector2 globalPos)
-        {
-            return globalPos - SceneObjectManager.GetGameWindow().RectGlobalPosition * SceneObjectManager.GetCamera().Zoom;
-        }
-        
-        public Vector2 GetScreenPosFromGameViewPos(Vector2 screenPos)
-        {
-            return screenPos + SceneObjectManager.GetGameWindow().RectGlobalPosition * SceneObjectManager.GetCamera().Zoom;
-        }
-
-        public bool IsMousePointInBounds(Vector2 mousePos, Control control)
+        public bool IsMousePointInBounds(Vector2 mousePos, Control control)    
         {
             Camera2D camera = SceneObjectManager.GetCamera();
-            Vector2 controlScreenPos = GetScreenPosFromGameViewPos(control.RectGlobalPosition);
-            Vector2 mousePosGame = camera.WorldPosToScreenPos(mousePos);
-            
-            return mousePosGame.x > controlScreenPos.x &&
-                   mousePosGame.y > controlScreenPos.y &&
-                   mousePosGame.x < controlScreenPos.x + control.GetRect().Size.x &&
-                   mousePosGame.y < controlScreenPos.y + control.GetRect().Size.y;
+            Vector2 mousePosGame = camera.ScreenPosToWorldPos(mousePos);
+
+            return mousePosGame.x > control.RectGlobalPosition.x &&
+                   mousePosGame.y > control.RectGlobalPosition.y &&
+                   mousePosGame.x < control.RectGlobalPosition.x + control.GetRect().Size.x &&
+                   mousePosGame.y < control.RectGlobalPosition.y + control.GetRect().Size.y;
         }
 
         private void OnWindowResized()

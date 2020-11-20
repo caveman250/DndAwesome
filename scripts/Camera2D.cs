@@ -56,9 +56,16 @@ namespace DndAwesome.scripts
             }
         }
 
+        public Vector2 ScreenPosToWorldPos(Vector2 screenPos)
+        {
+            Vector2 gameWindowCoords = screenPos - SceneObjectManager.GetGameWindow().RectGlobalPosition;
+            return gameWindowCoords *Zoom + Position;
+        }
+        
         public Vector2 WorldPosToScreenPos(Vector2 worldPos)
         {
-            return Position + worldPos * Zoom;
+            Vector2 gameWindowCoords = worldPos + SceneObjectManager.GetGameWindow().RectGlobalPosition;
+            return gameWindowCoords * Zoom - Position;
         }
     }
 }

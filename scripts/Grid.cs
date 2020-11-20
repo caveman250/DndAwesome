@@ -1,4 +1,5 @@
 using System;
+using DndAwesome.scripts.UI;
 using Godot;
 
 namespace DndAwesome.scripts
@@ -45,6 +46,57 @@ namespace DndAwesome.scripts
         public Vector2 GetTileSize()
         {
             return m_TileSize;
+        }
+        
+        public static Vector2 SnapPointToGrid(Vector2 point)
+        {
+            Camera2D camera = SceneObjectManager.GetCamera();
+            Grid grid = SceneObjectManager.GetGrid();
+            Vector2 gridTileSize = grid.GetTileSize();
+            Vector2 halfGridTile = gridTileSize / 2;
+            Vector2 gridPosWindow = grid.GlobalPosition;
+            Vector2 tokenPosWindow = point + halfGridTile;
+            
+            Vector2 relativePosition = tokenPosWindow - gridPosWindow;
+          
+
+            //get the potential snap positions
+            double snapNegativeX = gridPosWindow.x +
+                                   (Math.Round((relativePosition.x - halfGridTile.x) / gridTileSize.x) *
+                                    gridTileSize.x +
+                                    gridTileSize.x / 2);
+            double snapNegativeY = gridPosWindow.y +
+                                   (Math.Round((relativePosition.y - halfGridTile.y) / gridTileSize.y) *
+                                    gridTileSize.y +
+                                    gridTileSize.y / 2);
+            double snapPositiveX = gridPosWindow.x +
+                                   (Math.Round(relativePosition.x / gridTileSize.x) * gridTileSize.x +
+                                    halfGridTile.x);
+            double snapPositiveY = gridPosWindow.y +
+                                   (Math.Round(relativePosition.y / gridTileSize.y) * gridTileSize.y +
+                                    halfGridTile.x);
+
+            float newX, newY;
+            Vector2 offset = new Vector2(0, 0);
+            if (Math.Abs(tokenPosWindow.x - snapNegativeX) < Math.Abs(tokenPosWindow.x - snapPositiveX))
+            {
+                newX = (float)snapNegativeX;
+            }
+            else
+            {
+                newX = (float)snapPositiveX;
+            }
+
+            if (Math.Abs(tokenPosWindow.y - snapNegativeY) < Math.Abs(tokenPosWindow.y - snapPositiveY))
+            {
+                newY = (float)snapNegativeY;
+            }
+            else
+            {
+                newY = (float)snapPositiveY;
+            }
+
+            return new Vector2(newX, newY) - halfGridTile;
         }
     }
 }

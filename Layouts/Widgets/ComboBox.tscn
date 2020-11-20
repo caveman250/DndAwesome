@@ -1,0 +1,37 @@
+[gd_scene format=2]
+
+[node name="ComboBox" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = -656.0
+margin_bottom = -576.0
+rect_min_size = Vector2( 0, 24 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="OptionButton" type="OptionButton" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 112.0
+margin_right = -3.0
+margin_bottom = -1.90735e-06
+size_flags_horizontal = 3
+size_flags_vertical = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Text" type="RichTextLabel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 8.0
+margin_top = 8.0
+margin_right = -312.0
+text = "Option"
+fit_content_height = true
+__meta__ = {
+"_edit_use_anchors_": false
+}

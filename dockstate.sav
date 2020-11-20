@@ -1,1 +1,1 @@
-{"Vertical":false,"Children":[{"WindowName":"GameWindow","Type":1},{"Vertical":true,"Children":[{"WindowName":"ToolWindow","Type":1},{"WindowName":"RulesWindow","Type":1}],"SplitOffset":117,"Type":0}],"SplitOffset":794,"Type":0}
+{"Vertical":false,"Children":[{"WindowName":"GameWindow","Type":1},{"Vertical":true,"Children":[{"WindowName":"RulesWindow","Type":1},{"WindowName":"DmWindow","Type":1}],"SplitOffset":288,"Type":0}],"SplitOffset":552,"Type":0}

@@ -74,6 +74,7 @@ namespace DndAwesome.scripts
         public bool Input(InputEvent inputEvent)
         {
             GameWindow window = SceneObjectManager.GetGameWindow();
+            Camera2D camera = SceneObjectManager.GetCamera();
 
             if (inputEvent is InputEventMouse mouseEvent)
             {
@@ -81,7 +82,15 @@ namespace DndAwesome.scripts
                 
                 if (IsMoving)
                 {
-                    SetPosition(window.GetGameViewPosFromScreenPos(mouseEvent.Position) - MoveMouseOffset);
+                    Vector2 newPosition = camera.ScreenPosToWorldPos(mouseEvent.Position) - MoveMouseOffset;
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        SetPosition(Grid.SnapPointToGrid(newPosition));
+                    }
+                    else
+                    {
+                        SetPosition(newPosition);
+                    }
                 }
                 else
                 {
@@ -153,13 +162,14 @@ namespace DndAwesome.scripts
                                     if (!IsSelected)
                                     {
                                         IsSelected = true;
+                                        DmWindow.SetContentsType(DmWindow.DmWindowType.EditBackgroundImage);
                                         GetNode<Control>("ResizeGroup").Visible = true;
                                     }
 
                                     if (canMove)
                                     {
                                         IsMoving = true;
-                                        MoveMouseOffset = window.GetGameViewPosFromScreenPos(mouseEvent.Position) - RectPosition;
+                                        MoveMouseOffset = camera.ScreenPosToWorldPos(mouseEvent.Position) - RectPosition;
                                     }
                                     
                                     return true;
@@ -168,6 +178,7 @@ namespace DndAwesome.scripts
                                 {
                                     IsSelected = false;
                                     GetNode<Control>("ResizeGroup").Visible = false;
+                                    DmWindow.SetContentsType(DmWindow.DmWindowType.None);
                                 }
                             }
                         }
@@ -224,39 +235,137 @@ namespace DndAwesome.scripts
         
         private void DoResize(Vector2 mousePos)
         {
-            GameWindow window = SceneObjectManager.GetGameWindow();
-            Vector2 translatedMousePos = window.GetGameViewPosFromScreenPos(SceneObjectManager.GetCamera().WorldPosToScreenPos(mousePos));
+            Camera2D camera = SceneObjectManager.GetCamera();
+            Vector2 translatedMousePos = camera.ScreenPosToWorldPos(mousePos);
             Vector2 topLeft = RectGlobalPosition;
             Vector2 bottomRight = topLeft + RectSize;
             
             switch (ResizeDirection)
             {
                 case ResizeDirectionEnum.Top:
-                    topLeft = new Vector2(RectGlobalPosition.x, translatedMousePos.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 topLeftSnapped =
+                            Grid.SnapPointToGrid(new Vector2(RectGlobalPosition.x, translatedMousePos.y));
+                        topLeft = new Vector2(RectGlobalPosition.x, topLeftSnapped.y);
+                    }
+                    else
+                    {
+                        topLeft = new Vector2(RectGlobalPosition.x, translatedMousePos.y);
+                    }
+
+
                     break;
+                }
                 case ResizeDirectionEnum.Left:
-                    topLeft = new Vector2(translatedMousePos.x, RectGlobalPosition.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 topLeftSnapped =
+                            Grid.SnapPointToGrid(new Vector2(translatedMousePos.x, RectGlobalPosition.y));
+                        topLeft = new Vector2(topLeftSnapped.x, RectGlobalPosition.y);
+                    }
+                    else
+                    {
+                        topLeft = new Vector2(translatedMousePos.x, RectGlobalPosition.y);
+                    }
+
                     break;
+                }
                 case ResizeDirectionEnum.Bottom:
-                    bottomRight = new Vector2(bottomRight.x, translatedMousePos.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 bottomRightSnapped =
+                            Grid.SnapPointToGrid(new Vector2(bottomRight.x, translatedMousePos.y));
+                        bottomRight = new Vector2(bottomRight.x, bottomRightSnapped.y);
+                    }
+                    else
+                    {
+                        bottomRight = new Vector2(bottomRight.x, translatedMousePos.y);
+                    }
                     break;
+                }
                 case ResizeDirectionEnum.Right:
-                    bottomRight = new Vector2(translatedMousePos.x, bottomRight.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 bottomRightSnapped =
+                            Grid.SnapPointToGrid(new Vector2(translatedMousePos.x, bottomRight.y));
+                        bottomRight = new Vector2(bottomRightSnapped.x, bottomRight.y);
+                    }
+                    else
+                    {
+                        bottomRight = new Vector2(translatedMousePos.x, bottomRight.y);
+                    }
+                    
                     break;
+                }
                 case ResizeDirectionEnum.TopLeft:
-                    topLeft = translatedMousePos;
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        topLeft = Grid.SnapPointToGrid(translatedMousePos);
+                    }
+                    else
+                    {
+                        topLeft = translatedMousePos;
+                    }
+                    
                     break;
+                }
                 case ResizeDirectionEnum.TopRight:
-                    topLeft = new Vector2(topLeft.x, translatedMousePos.y);
-                    bottomRight = new Vector2(translatedMousePos.x, bottomRight.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 topLeftSnapped = Grid.SnapPointToGrid(new Vector2(topLeft.x, translatedMousePos.y));
+                        Vector2 bottomRightSnapped =
+                            Grid.SnapPointToGrid(new Vector2(translatedMousePos.x, bottomRight.y));
+
+                        topLeft = new Vector2(topLeft.x, topLeftSnapped.y);
+                        bottomRight = new Vector2(bottomRightSnapped.x, bottomRight.y);
+                    }
+                    else
+                    {
+                        topLeft = new Vector2(topLeft.x, translatedMousePos.y);
+                        bottomRight = new Vector2(translatedMousePos.x, bottomRight.y);
+                    }
+                    
                     break;
+                }
                 case ResizeDirectionEnum.BottomLeft:
-                    topLeft = new Vector2(translatedMousePos.x, topLeft.y);
-                    bottomRight = new Vector2(bottomRight.x, translatedMousePos.y);
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        Vector2 topLeftSnapped = Grid.SnapPointToGrid(new Vector2(translatedMousePos.x, topLeft.y));
+                        Vector2 bottomRightSnapped =
+                            Grid.SnapPointToGrid(new Vector2(bottomRight.x, translatedMousePos.y));
+
+                        topLeft = new Vector2(topLeftSnapped.x, topLeft.y);
+                        bottomRight = new Vector2(bottomRight.x, bottomRightSnapped.y);
+                    }
+                    else
+                    {
+                        topLeft = new Vector2(translatedMousePos.x, topLeft.y);
+                        bottomRight = new Vector2(bottomRight.x, translatedMousePos.y);
+                    }
+                    
                     break;
+                }
                 case ResizeDirectionEnum.BottomRight:
-                    bottomRight = translatedMousePos;
+                {
+                    if (DmSettings.BackgoundImageSnapToGrid)
+                    {
+                        bottomRight = Grid.SnapPointToGrid(translatedMousePos);
+                    }
+                    else
+                    {
+                        bottomRight = translatedMousePos;
+                    }
+                    
                     break;
+                }
             }
             
             SetGlobalPosition(topLeft);
