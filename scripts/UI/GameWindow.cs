@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Linq;
 using Camera2D = Godot.Camera2D;
 
 namespace DndAwesome.scripts.UI
@@ -15,6 +16,8 @@ namespace DndAwesome.scripts.UI
 
         public override void _Input(InputEvent @event)
         {
+            base._Input(@event);
+            
             SceneObjectManager.GetCamera()._Input(@event);
 
             Scene scene = SceneObjectManager.GetCamera().GetNode<Scene>("Scene");
@@ -22,21 +25,35 @@ namespace DndAwesome.scripts.UI
             {
                 foreach (Node node in scene.BackgroundLayer.GetChildren())
                 {
-                    node._Input(@event);
+                    if (node is BackgroundImage image)
+                    {
+                        if (image.Input(@event))
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        node._Input(@event);
+                    }
                 }
                 
-                foreach (Node node in scene.TokenLayer.GetChildren())
+                foreach (Token token in scene.TokenLayer.GetChildren().Cast<Token>())
                 {
-                    node._Input(@event);
+                    if (token.Input(@event))
+                    {
+                        return;
+                    }
                 }
                 
-                foreach (Node node in scene.DmLayer.GetChildren())
+                foreach (Token token in scene.DmLayer.GetChildren().Cast<Token>())
                 {
-                    node._Input(@event);
+                    if (token.Input(@event))
+                    {
+                        return;
+                    }
                 }
             }
-
-            base._Input(@event);
         }
 
         //only applies to children of GameWindow.

@@ -28,7 +28,15 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Grid" type="Node2D" parent="BackgroundLayer"]
+[node name="GridContainer" type="Control" parent="BackgroundLayer"]
+margin_right = 40.0
+margin_bottom = 40.0
+rect_clip_content = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Grid" type="Node2D" parent="BackgroundLayer/GridContainer"]
 script = ExtResource( 5 )
 
 [node name="TokenLayer" type="Node" parent="."]

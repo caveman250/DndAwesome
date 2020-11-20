@@ -1,9 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection.PortableExecutable;
-using System.Runtime.InteropServices.WindowsRuntime;
 using DndAwesome.scripts.UI.ToolWindow;
 using Godot;
 using Newtonsoft.Json;
@@ -625,6 +621,11 @@ namespace DndAwesome.scripts
                 {
                     container.SetSize(HUDPlayer.DockArea.RectSize);
                 }
+                
+                if (s_DockRoot == null)
+                {
+                    s_DockRoot = container;
+                }
 
                 foreach (SerialisedDockItem child in serialisedContainer.Children)
                 {
@@ -632,11 +633,6 @@ namespace DndAwesome.scripts
                 }
 
                 container.SplitOffset = serialisedContainer.SplitOffset;
-
-                if (s_DockRoot == null)
-                {
-                    s_DockRoot = container;
-                }
             }
             else if (item is SerialisedDockPlaceholder serialisedDockPlaceholder)
             {

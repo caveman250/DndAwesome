@@ -16,7 +16,7 @@ namespace DndAwesome.scripts
             SceneObjectManager.RegisterToken(this);
         }
 
-        public override void _Input(InputEvent input)
+        public bool Input(InputEvent input)
         {
             GameWindow window = SceneObjectManager.GetGameWindow();
             
@@ -30,10 +30,13 @@ namespace DndAwesome.scripts
                         if (!m_FollowingMouse)
                         {
                             m_ShouldSnapToGrid = true;
+                            return true;
                         }
                     }
                 }
             }
+
+            return false;
         }
 
         public override void _Process(float delta)
@@ -72,7 +75,7 @@ namespace DndAwesome.scripts
                                         halfGridTile.x);
 
                 float newX, newY;
-                if (Math.Abs(relativePosition.x - snapNegativeX) < Math.Abs(relativePosition.x - snapPositiveX))
+                if (Math.Abs(tokenPosWindow.x - snapNegativeX) < Math.Abs(tokenPosWindow.x - snapPositiveX))
                 {
                     newX = (float)snapNegativeX;
                 }
@@ -81,7 +84,7 @@ namespace DndAwesome.scripts
                     newX = (float)snapPositiveX;
                 }
 
-                if (Math.Abs(relativePosition.y - snapNegativeY) < Math.Abs(relativePosition.y - snapPositiveY))
+                if (Math.Abs(tokenPosWindow.y - snapNegativeY) < Math.Abs(tokenPosWindow.y - snapPositiveY))
                 {
                     newY = (float)snapNegativeY;
                 }

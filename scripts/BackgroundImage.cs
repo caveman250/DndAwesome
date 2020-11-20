@@ -28,6 +28,8 @@ namespace DndAwesome.scripts
         }
         
         private bool IsSelected { get; set; }
+        private bool IsMoving { get; set; }
+        private Vector2 MoveMouseOffset { get; set; }
         private ResizeDirectionEnum ResizeDirection { get; set; } = ResizeDirectionEnum.None;
         public bool Focused { get; set; }
         
@@ -69,51 +71,70 @@ namespace DndAwesome.scripts
             MidRightDrag.MouseDefaultCursorShape = CursorShape.Vsize;
         }
 
-        public override void _Input(InputEvent inputEvent)
+        public bool Input(InputEvent inputEvent)
         {
             GameWindow window = SceneObjectManager.GetGameWindow();
 
             if (inputEvent is InputEventMouse mouseEvent)
             {
                 ResizeDirectionEnum potentialResizeDirection = ResizeDirectionEnum.None;
-                if (window.IsMousePointInBounds(mouseEvent.Position, TopLeftDrag))
+                
+                if (IsMoving)
                 {
-                    potentialResizeDirection = ResizeDirectionEnum.TopLeft;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, MidTopDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.Top;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, TopRightDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.TopRight;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, MidRightDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.Right;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, BottomRightDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.BottomRight;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, MidBottomDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.Bottom;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, BottomLeftDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.BottomLeft;
-                }
-                else if (window.IsMousePointInBounds(mouseEvent.Position, MidLeftDrag))
-                {
-                    potentialResizeDirection = ResizeDirectionEnum.Left;
+                    SetPosition(window.GetGameViewPosFromScreenPos(mouseEvent.Position) - MoveMouseOffset);
                 }
                 else
                 {
-                    potentialResizeDirection = ResizeDirectionEnum.None;
+                    if (window.IsMousePointInBounds(mouseEvent.Position, TopLeftDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.TopLeft;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, MidTopDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.Top;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, TopRightDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.TopRight;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, MidRightDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.Right;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, BottomRightDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.BottomRight;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, MidBottomDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.Bottom;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, BottomLeftDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.BottomLeft;
+                    }
+                    else if (window.IsMousePointInBounds(mouseEvent.Position, MidLeftDrag))
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.Left;
+                    }
+                    else
+                    {
+                        potentialResizeDirection = ResizeDirectionEnum.None;
+                    }
                 }
-                
-                SetCursorTypeForResizeDirection(potentialResizeDirection);
+
+                bool canMove = false;
+                if (IsSelected && 
+                    potentialResizeDirection == ResizeDirectionEnum.None && 
+                    window.IsMousePointInBounds(mouseEvent.Position, this))
+                {
+                    SceneObjectManager.GetGameWindow().MouseDefaultCursorShape = CursorShape.Move;
+                    canMove = true;
+                }
+                else
+                {
+                    SetCursorTypeForResizeDirection(potentialResizeDirection);
+                }
 
                 if (inputEvent is InputEventMouseButton buttonEvent)
                 {
@@ -129,8 +150,19 @@ namespace DndAwesome.scripts
                             {
                                 if (window.IsMousePointInBounds(buttonEvent.Position, this))
                                 {
-                                    IsSelected = true;
-                                    GetNode<Control>("ResizeGroup").Visible = true;
+                                    if (!IsSelected)
+                                    {
+                                        IsSelected = true;
+                                        GetNode<Control>("ResizeGroup").Visible = true;
+                                    }
+
+                                    if (canMove)
+                                    {
+                                        IsMoving = true;
+                                        MoveMouseOffset = window.GetGameViewPosFromScreenPos(mouseEvent.Position) - RectPosition;
+                                    }
+                                    
+                                    return true;
                                 }
                                 else if (IsSelected)
                                 {
@@ -142,6 +174,7 @@ namespace DndAwesome.scripts
                         else
                         {
                             ResizeDirection = ResizeDirectionEnum.None;
+                            IsMoving = false;
                         }
                     }
                 }
@@ -151,11 +184,13 @@ namespace DndAwesome.scripts
                     if (ResizeDirection != ResizeDirectionEnum.None)
                     {
                         DoResize(mouseEvent.Position);
+                        return true;
                     }
                 }
             }
-
+            
             base._Input(inputEvent);
+            return false;
         }
         
         private void SetCursorTypeForResizeDirection(ResizeDirectionEnum direction)
